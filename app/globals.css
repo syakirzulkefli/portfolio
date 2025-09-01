@@ -1,26 +1,248 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #000000;
+  --foreground: #ffffff;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
+  background: #2D3748;
+  overscroll-behavior: none;
 }
 
 body {
-  background: var(--background);
+  background: #2D3748;
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-feature-settings: 'liga' 1, 'calt' 1;
+  min-height: 100vh;
+  position: relative;
+  line-height: 1.6;
+  font-weight: 400;
+  overscroll-behavior: none;
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #5A67D8, #667EEA, #5A67D8, #8B5DFF);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientShift 8s ease-in-out infinite;
+}
+
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.card-blur {
+  backdrop-filter: blur(16px) saturate(150%);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.08) 0%, 
+    rgba(255, 255, 255, 0.04) 50%, 
+    rgba(0, 0, 0, 0.2) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 40px rgba(90, 103, 216, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.card-blur::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(90, 103, 216, 0.15), transparent);
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+.glow-effect {
+  box-shadow: 
+    0 0 20px rgba(90, 103, 216, 0.5),
+    0 0 40px rgba(90, 103, 216, 0.3),
+    0 0 80px rgba(90, 103, 216, 0.2);
+  animation: pulseGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes pulseGlow {
+  0% { 
+    box-shadow: 
+      0 0 20px rgba(90, 103, 216, 0.4),
+      0 0 60px rgba(90, 103, 216, 0.3),
+      0 0 100px rgba(90, 103, 216, 0.2);
+  }
+  100% { 
+    box-shadow: 
+      0 0 30px rgba(90, 103, 216, 0.6),
+      0 0 80px rgba(90, 103, 216, 0.5),
+      0 0 120px rgba(90, 103, 216, 0.4);
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.float-animation {
+  animation: float 6s ease-in-out infinite;
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.8s ease-out forwards;
+}
+
+.slide-in-left {
+  animation: slideInLeft 0.8s ease-out forwards;
+}
+
+.hover-scale {
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.hover-scale:hover {
+  transform: scale(1.05) rotateY(5deg);
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.3),
+    0 0 80px rgba(90, 103, 216, 0.2);
+}
+
+.magnetic-effect {
+  transition: transform 0.2s ease-out;
+  cursor: pointer;
+}
+
+.sparkle {
+  position: relative;
+  overflow: hidden;
+}
+
+.sparkle::after {
+  content: '✨';
+  position: absolute;
+  top: 20%;
+  right: 20%;
+  animation: sparkle 2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes sparkle {
+  0%, 100% { opacity: 0; transform: scale(0) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1) rotate(180deg); }
+}
+
+.text-shadow {
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes floatParticle {
+  0%, 100% { transform: translateY(0px) translateX(0px) rotate(0deg); }
+  25% { transform: translateY(-20px) translateX(10px) rotate(90deg); }
+  50% { transform: translateY(-40px) translateX(-10px) rotate(180deg); }
+  75% { transform: translateY(-20px) translateX(5px) rotate(270deg); }
+}
+
+.holographic {
+  background: linear-gradient(45deg, #ff006e, #fb5607, #ffbe0b, #8338ec, #3a86ff);
+  background-size: 400% 400%;
+  animation: holographicShift 4s ease-in-out infinite;
+}
+
+@keyframes holographicShift {
+  0%, 100% { background-position: 0% 50%; }
+  25% { background-position: 100% 50%; }
+  50% { background-position: 100% 100%; }
+  75% { background-position: 0% 100%; }
+}
+
+.neon-border {
+  border: 2px solid transparent;
+  background: linear-gradient(45deg, #ff006e, #8338ec, #3a86ff) border-box;
+  animation: neonPulse 2s ease-in-out infinite alternate;
+}
+
+@keyframes neonPulse {
+  0% { box-shadow: 0 0 5px rgba(255, 0, 110, 0.5), 0 0 10px rgba(131, 56, 236, 0.3); }
+  100% { box-shadow: 0 0 20px rgba(255, 0, 110, 0.8), 0 0 30px rgba(131, 56, 236, 0.6); }
+}
+
+.animate-shimmer {
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+.perspective-card {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+.tilt-effect {
+  transition: transform 0.3s ease-out;
+}
+
+.tilt-effect:hover {
+  transform: rotateX(5deg) rotateY(10deg) scale(1.02);
+}
+
+.floating-nav {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.floating-nav:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 10px 40px rgba(90, 103, 216, 0.3),
+    0 0 0 1px rgba(90, 103, 216, 0.2);
+}
+
+@keyframes scroll {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0%);
+  }
+}
+
+.animate-scroll {
+  animation: scroll 30s linear infinite;
 }
