@@ -1,16 +1,18 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
 export default function FloatingParticles() {
-  const [particles, setParticles] = useState<Array<{
-    id: number;
-    x: number;
-    y: number;
-    size: number;
-    duration: number;
-    delay: number;
-  }>>([]);
+  const [particles, setParticles] = useState<
+    Array<{
+      id: number;
+      x: number;
+      y: number;
+      size: number;
+      duration: number;
+      delay: number;
+    }>
+  >([]);
 
   useEffect(() => {
     const newParticles = Array.from({ length: 20 }, (_, i) => ({
@@ -40,12 +42,26 @@ export default function FloatingParticles() {
           }}
         />
       ))}
-      
-      {/* Animated geometric shapes */}
-      <div className="absolute top-20 left-10 w-20 h-20 border opacity-30 rounded-full animate-spin" style={{ borderColor: 'rgba(90, 103, 216, 0.2)', animationDuration: '20s' }} />
-      <div className="absolute top-40 right-20 w-16 h-16 border opacity-30 rotate-45 animate-pulse" style={{ borderColor: 'rgba(90, 103, 216, 0.25)' }} />
-      <div className="absolute bottom-40 left-20 w-12 h-12 border opacity-30 rounded-full animate-bounce" style={{ borderColor: 'rgba(90, 103, 216, 0.3)', animationDelay: '2s' }} />
-      <div className="absolute bottom-20 right-10 w-24 h-24 border opacity-30 rotate-12 animate-pulse" style={{ borderColor: 'rgba(90, 103, 216, 0.2)', animationDelay: '1s' }} />
+
+      <div
+        className="absolute top-20 left-10 w-20 h-20 border opacity-30 rounded-full animate-spin"
+        style={{
+          borderColor: "rgba(90, 103, 216, 0.2)",
+          animationDuration: "20s",
+        }}
+      />
+      <div
+        className="absolute top-40 right-20 w-16 h-16 border opacity-30 rotate-45 animate-pulse"
+        style={{ borderColor: "rgba(90, 103, 216, 0.25)" }}
+      />
+      <div
+        className="absolute bottom-40 left-20 w-12 h-12 border opacity-30 rounded-full animate-bounce"
+        style={{ borderColor: "rgba(90, 103, 216, 0.3)", animationDelay: "2s" }}
+      />
+      <div
+        className="absolute bottom-20 right-10 w-24 h-24 border opacity-30 rotate-12 animate-pulse"
+        style={{ borderColor: "rgba(90, 103, 216, 0.2)", animationDelay: "1s" }}
+      />
     </div>
   );
 }
