@@ -1,6 +1,7 @@
 import Navigation from "./components/Navigation";
 import FloatingParticles from "./components/FloatingParticles";
 import TechStackAnimation from "./components/TechStackAnimation";
+import TimelineAnimation from "../components/TimelineAnimation";
 
 export default function Home() {
   return (
@@ -107,7 +108,7 @@ export default function Home() {
 
           <div className="space-y-16">
             <div className="card-blur rounded-3xl p-8 hover:glow-effect transition-all hover-scale relative overflow-hidden">
-              <div className="grid lg:grid-cols-2 gap-12 items-center relative z-10">
+              <div className="grid lg:grid-cols-2 gap-16 items-center relative z-10">
                 <div>
                   <div className="flex items-center gap-3 mb-4">
                     <span className="bg-green-500/20 text-green-300 px-3 py-1 rounded-full text-sm font-semibold">
@@ -184,7 +185,7 @@ export default function Home() {
             </div>
 
             <div className="card-blur rounded-3xl p-8 hover:glow-effect transition-all hover-scale relative overflow-hidden">
-              <div className="grid lg:grid-cols-2 gap-12 items-center relative z-10">
+              <div className="grid lg:grid-cols-2 gap-16 items-center relative z-10">
                 <div className="bg-gradient-to-br from-green-500/20 to-teal-500/20 rounded-2xl h-80 flex items-center justify-center lg:order-1 relative overflow-hidden holographic">
                   <div className="text-white/60 text-center z-10 relative">
                     <div className="text-6xl mb-4 animate-bounce">🚀</div>
@@ -259,131 +260,662 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="experience" className="py-20 px-6 bg-black">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-semibold text-center mb-16 gradient-text leading-tight tracking-tight">
-            Experience
-          </h2>
+      <section
+        id="experience"
+        className="py-20 px-6 bg-black relative overflow-hidden"
+      >
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-semibold leading-tight mb-4">
+              My Professional <span className="gradient-text">Journey</span>
+            </h2>
+            <p className="text-lg text-white/80 leading-relaxed max-w-2xl mx-auto">
+              Building scalable solutions and leading development teams across
+              different stages of my career.
+            </p>
+          </div>
 
-          <div className="space-y-12">
-            <div className="card-blur rounded-2xl p-8 relative">
-              <div className="flex flex-col md:flex-row md:items-center gap-6 mb-6">
-                <div className="flex-1">
-                  <h3 className="text-xl md:text-2xl font-semibold mb-2 tracking-tight">
-                    Senior Full-Stack Engineer
-                  </h3>
-                  <div className="text-blue-400 font-medium mb-2 text-sm md:text-base">
-                    TechCorp Inc.
-                  </div>
-                  <div className="text-white/60 text-sm">
-                    2022 - Present • Remote
-                  </div>
+          <div className="prisma-timeline">
+            <span
+              className="prisma-timeline-line"
+              style={{ height: "2800px" }}
+            ></span>
+
+            <div className="space-y-40">
+              <div className="prisma-timeline-item" data-animate="true">
+                <div className="prisma-timeline-icon hover:scale-110 transition-all duration-300 group">
+                  <span className="text-[#71E8DF] font-bold text-lg">2022</span>
                 </div>
-                <div className="text-right">
-                  <div className="text-sm text-white/60 mb-2">Tech Stack</div>
-                  <div className="flex flex-wrap gap-2 justify-end">
-                    <span className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded text-xs">
-                      React
-                    </span>
-                    <span className="bg-green-500/20 text-green-300 px-2 py-1 rounded text-xs">
-                      Node.js
-                    </span>
-                    <span className="bg-purple-500/20 text-purple-300 px-2 py-1 rounded text-xs">
-                      AWS
-                    </span>
+
+                <div className="timeline-cards">
+                  <div className="prisma-job-card group hover:scale-[1.02] transition-all duration-300">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <span className="bg-green-500/20 text-green-300 px-3 py-1 rounded-full text-sm font-semibold">
+                          Current
+                        </span>
+                        <span className="text-[#71E8DF] font-semibold">
+                          2022 - Present
+                        </span>
+                      </div>
+
+                      <h3 className="text-3xl font-semibold text-white">
+                        Senior Full-Stack Engineer
+                      </h3>
+                      <p className="text-[#71E8DF] font-medium text-xl">
+                        TechCorp Inc.
+                      </p>
+
+                      <div className="space-y-4 text-white/80 text-lg">
+                        <p>
+                          Led development of microservices architecture serving
+                          100k+ daily users. Built scalable React applications
+                          with modern state management.
+                        </p>
+                        <div className="space-y-3">
+                          <div className="flex items-start gap-3">
+                            <span className="text-[#71E8DF] mt-1">▸</span>
+                            <span>
+                              Improved application performance by 60% through
+                              React optimization
+                            </span>
+                          </div>
+                          <div className="flex items-start gap-3">
+                            <span className="text-[#71E8DF] mt-1">▸</span>
+                            <span>
+                              Mentored 3 developers on React best practices and
+                              architecture
+                            </span>
+                          </div>
+                          <div className="flex items-start gap-3">
+                            <span className="text-[#71E8DF] mt-1">▸</span>
+                            <span>
+                              Built reusable component library reducing
+                              development time by 40%
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="prisma-content-card accelerate group hover:scale-[1.02] transition-all duration-300">
+                    <div className="space-y-6">
+                      <div className="prisma-tabs">
+                        <button className="prisma-tab active">
+                          performance.tsx
+                        </button>
+                        <button className="prisma-tab">architecture.js</button>
+                      </div>
+                      <div className="prisma-code-block">
+                        <code className="text-white">
+                          <div className="mb-2">
+                            <span className="token keyword">const</span>
+                            <span className="token plain"> optimizeApp = </span>
+                            <span className="token keyword">async</span>
+                            <span className="token plain"> () </span>
+                            <span className="token operator">=&gt;</span>
+                            <span className="token plain"> </span>
+                            <span className="token punctuation">{"{"}</span>
+                          </div>
+                          <div className="ml-4 mb-2">
+                            <span className="token keyword">const</span>
+                            <span className="token plain"> result = </span>
+                            <span className="token keyword">await</span>
+                            <span className="token plain"> performance.</span>
+                            <span className="token function">improve</span>
+                            <span className="token punctuation">(</span>
+                            <span className="token punctuation">{"{"}</span>
+                          </div>
+                          <div className="ml-8 mb-2">
+                            <span className="token plain">loadTime</span>
+                            <span className="token operator">:</span>
+                            <span className="token string">
+                              {" "}
+                              &quot;60% faster&quot;
+                            </span>
+                            <span className="token punctuation">,</span>
+                          </div>
+                          <div className="ml-8 mb-2">
+                            <span className="token plain">users</span>
+                            <span className="token operator">:</span>
+                            <span className="token string">
+                              {" "}
+                              &quot;100k+ daily&quot;
+                            </span>
+                            <span className="token punctuation">,</span>
+                          </div>
+                          <div className="ml-8 mb-2">
+                            <span className="token plain">architecture</span>
+                            <span className="token operator">:</span>
+                            <span className="token string">
+                              {" "}
+                              &quot;microservices&quot;
+                            </span>
+                          </div>
+                          <div className="ml-4 mb-2">
+                            <span className="token punctuation">{"}"}</span>
+                            <span className="token punctuation">{")"}</span>
+                          </div>
+                          <div className="mb-4"></div>
+                          <div className="ml-4 mb-2">
+                            <span className="token keyword">return</span>
+                            <span className="token plain"> </span>
+                            <span className="token punctuation">{"{"}</span>
+                            <span className="token plain"> success</span>
+                            <span className="token operator">:</span>
+                            <span className="token boolean"> true</span>
+                            <span className="token plain">, result </span>
+                            <span className="token punctuation">{"}"}</span>
+                          </div>
+                          <div>
+                            <span className="token punctuation">{"}"}</span>
+                          </div>
+                        </code>
+                        <button className="prisma-copy-btn">
+                          <i className="fa-solid fa-copy"></i>
+                        </button>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        <span className="bg-[#61DAFB]/20 text-[#61DAFB] px-3 py-1 rounded-full text-sm font-medium">
+                          React
+                        </span>
+                        <span className="bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full text-sm font-medium">
+                          TypeScript
+                        </span>
+                        <span className="bg-purple-500/20 text-purple-300 px-3 py-1 rounded-full text-sm font-medium">
+                          AWS
+                        </span>
+                        <span className="bg-orange-500/20 text-orange-300 px-3 py-1 rounded-full text-sm font-medium">
+                          PostgreSQL
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <ul className="space-y-3 text-white/80 mb-6">
-                <li className="flex items-start gap-3">
-                  <span className="text-green-400 mt-1">▸</span>
-                  Led development of microservices architecture serving 100k+
-                  daily users
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-green-400 mt-1">▸</span>
-                  Improved application performance by 60% through code
-                  optimization and caching strategies
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-green-400 mt-1">▸</span>
-                  Mentored 3 junior developers, establishing code review
-                  processes and best practices
-                </li>
-              </ul>
+              <div className="prisma-timeline-item" data-animate="true">
+                <div className="prisma-timeline-icon hover:scale-110 transition-all duration-300 group">
+                  <span className="text-[#71E8DF] font-bold text-lg">2020</span>
+                </div>
+                <div className="timeline-cards">
+                  <div className="prisma-job-card group hover:scale-[1.02] transition-all duration-300">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <span className="bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full text-sm font-semibold">
+                          Growth
+                        </span>
+                        <span className="text-[#71E8DF] font-semibold">
+                          2020 - 2022
+                        </span>
+                      </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-white/10">
-                <div className="text-center">
-                  <div className="text-xl font-bold text-green-400">60%</div>
-                  <div className="text-xs text-white/60">Performance Gain</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-bold text-blue-400">100k+</div>
-                  <div className="text-xs text-white/60">Daily Users</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-bold text-purple-400">15+</div>
-                  <div className="text-xs text-white/60">
-                    Projects Delivered
+                      <h3 className="text-3xl font-semibold text-white">
+                        Full-Stack Developer
+                      </h3>
+                      <p className="text-[#71E8DF] font-medium text-xl">
+                        StartupXYZ
+                      </p>
+
+                      <div className="space-y-4 text-white/80 text-lg">
+                        <p>
+                          Built MVP from scratch that secured $500k seed
+                          funding. Designed scalable Node.js APIs and
+                          implemented modern deployment practices.
+                        </p>
+                        <div className="space-y-3">
+                          <div className="flex items-start gap-3">
+                            <span className="text-[#71E8DF] mt-1">▸</span>
+                            <span>
+                              Developed RESTful APIs handling 10k+
+                              requests/minute with Node.js
+                            </span>
+                          </div>
+                          <div className="flex items-start gap-3">
+                            <span className="text-[#71E8DF] mt-1">▸</span>
+                            <span>
+                              Implemented CI/CD pipeline reducing deployment
+                              time by 80%
+                            </span>
+                          </div>
+                          <div className="flex items-start gap-3">
+                            <span className="text-[#71E8DF] mt-1">▸</span>
+                            <span>
+                              Built real-time features using WebSockets and
+                              Redis
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-bold text-yellow-400">3</div>
-                  <div className="text-xs text-white/60">
-                    Developers Mentored
+                  <div className="prisma-content-card postgres group hover:scale-[1.02] transition-all duration-300">
+                    <div className="space-y-6">
+                      <div className="prisma-tabs">
+                        <button className="prisma-tab active">
+                          mvp-builder.js
+                        </button>
+                        <button className="prisma-tab">deployment.yml</button>
+                      </div>
+                      <div className="prisma-code-block">
+                        <code className="text-white">
+                          <div className="mb-2">
+                            <span className="token keyword">const</span>
+                            <span className="token plain"> buildMVP = </span>
+                            <span className="token keyword">async</span>
+                            <span className="token plain"> () </span>
+                            <span className="token operator">=&gt;</span>
+                            <span className="token plain"> </span>
+                            <span className="token punctuation">{"{"}</span>
+                          </div>
+                          <div className="ml-4 mb-2">
+                            <span className="token keyword">const</span>
+                            <span className="token plain"> startup = </span>
+                            <span className="token keyword">await</span>
+                            <span className="token plain"> develop.</span>
+                            <span className="token function">fromScratch</span>
+                            <span className="token punctuation">(</span>
+                            <span className="token punctuation">{"{"}</span>
+                          </div>
+                          <div className="ml-8 mb-2">
+                            <span className="token plain">backend</span>
+                            <span className="token operator">:</span>
+                            <span className="token string">
+                              {" "}
+                              &quot;Node.js + Express&quot;
+                            </span>
+                            <span className="token punctuation">,</span>
+                          </div>
+                          <div className="ml-8 mb-2">
+                            <span className="token plain">database</span>
+                            <span className="token operator">:</span>
+                            <span className="token string">
+                              {" "}
+                              &quot;PostgreSQL&quot;
+                            </span>
+                            <span className="token punctuation">,</span>
+                          </div>
+                          <div className="ml-8 mb-2">
+                            <span className="token plain">cicd</span>
+                            <span className="token operator">:</span>
+                            <span className="token string">
+                              {" "}
+                              &quot;Docker + GitHub Actions&quot;
+                            </span>
+                          </div>
+                          <div className="ml-4 mb-2">
+                            <span className="token punctuation">{"}"}</span>
+                            <span className="token punctuation">{")"}</span>
+                          </div>
+                          <div className="mb-4"></div>
+                          <div className="ml-4 mb-2">
+                            <span className="token comment">{`// Result: $500k seed funding 🚀`}</span>
+                          </div>
+                          <div className="ml-4 mb-2">
+                            <span className="token keyword">return</span>
+                            <span className="token plain"> </span>
+                            <span className="token punctuation">{"{"}</span>
+                            <span className="token plain"> deploymentTime</span>
+                            <span className="token operator">:</span>
+                            <span className="token string">
+                              {" "}
+                              &quot;-80%&quot;
+                            </span>
+                            <span className="token plain"> </span>
+                            <span className="token punctuation">{"}"}</span>
+                          </div>
+                          <div>
+                            <span className="token punctuation">{"}"}</span>
+                          </div>
+                        </code>
+                        <button className="prisma-copy-btn">
+                          <i className="fa-solid fa-copy"></i>
+                        </button>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        <span className="bg-[#68A063]/20 text-[#68A063] px-3 py-1 rounded-full text-sm font-medium">
+                          Node.js
+                        </span>
+                        <span className="bg-red-500/20 text-red-300 px-3 py-1 rounded-full text-sm font-medium">
+                          Vue.js
+                        </span>
+                        <span className="bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full text-sm font-medium">
+                          PostgreSQL
+                        </span>
+                        <span className="bg-gray-500/20 text-gray-300 px-3 py-1 rounded-full text-sm font-medium">
+                          Docker
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div className="card-blur rounded-2xl p-8 opacity-80">
-              <div className="flex flex-col md:flex-row md:items-center gap-6 mb-6">
-                <div className="flex-1">
-                  <h3 className="text-2xl font-bold mb-2">
-                    Full-Stack Developer
-                  </h3>
-                  <div className="text-blue-400 font-semibold mb-2">
-                    StartupXYZ
-                  </div>
-                  <div className="text-white/60">
-                    2020 - 2022 • San Francisco
-                  </div>
+              <div className="prisma-timeline-item" data-animate="true">
+                <div className="prisma-timeline-icon hover:scale-110 transition-all duration-300 group">
+                  <span className="text-[#71E8DF] font-bold text-lg">2018</span>
                 </div>
-                <div className="text-right">
-                  <div className="text-sm text-white/60 mb-2">Tech Stack</div>
-                  <div className="flex flex-wrap gap-2 justify-end">
-                    <span className="bg-red-500/20 text-red-300 px-2 py-1 rounded text-xs">
-                      Vue.js
-                    </span>
-                    <span className="bg-yellow-500/20 text-yellow-300 px-2 py-1 rounded text-xs">
-                      Python
-                    </span>
-                    <span className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded text-xs">
-                      PostgreSQL
-                    </span>
+                <div className="timeline-cards">
+                  <div className="prisma-content-card optimize group hover:scale-[1.02] transition-all duration-300">
+                    <div className="space-y-6">
+                      <div className="prisma-tabs">
+                        <button className="prisma-tab active">
+                          foundation.css
+                        </button>
+                        <button className="prisma-tab">responsive.html</button>
+                      </div>
+                      <div className="prisma-code-block">
+                        <code className="text-white">
+                          <div className="mb-2">
+                            <span className="token comment">{`/* Building solid foundations */`}</span>
+                          </div>
+                          <div className="mb-2">
+                            <span className="token selector">
+                              .responsive-layout
+                            </span>
+                            <span className="token plain"> </span>
+                            <span className="token punctuation">{"{"}</span>
+                          </div>
+                          <div className="ml-4 mb-2">
+                            <span className="token property">display</span>
+                            <span className="token operator">:</span>
+                            <span className="token plain"> grid</span>
+                            <span className="token punctuation">;</span>
+                          </div>
+                          <div className="ml-4 mb-2">
+                            <span className="token property">
+                              grid-template-columns
+                            </span>
+                            <span className="token operator">:</span>
+                            <span className="token plain">
+                              {" "}
+                              repeat(auto-fit, minmax(300px, 1fr))
+                            </span>
+                            <span className="token punctuation">;</span>
+                          </div>
+                          <div className="ml-4 mb-2">
+                            <span className="token property">gap</span>
+                            <span className="token operator">:</span>
+                            <span className="token plain"> 2rem</span>
+                            <span className="token punctuation">;</span>
+                          </div>
+                          <div className="mb-2">
+                            <span className="token punctuation">{"}"}</span>
+                          </div>
+                          <div className="mb-4"></div>
+                          <div className="mb-2">
+                            <span className="token comment">{`/* Result: 20+ successful projects ✨ */`}</span>
+                          </div>
+                          <div className="mb-2">
+                            <span className="token selector">
+                              @media (max-width: 768px)
+                            </span>
+                            <span className="token plain"> </span>
+                            <span className="token punctuation">{"{"}</span>
+                          </div>
+                          <div className="ml-4 mb-2">
+                            <span className="token selector">
+                              .responsive-layout
+                            </span>
+                            <span className="token plain"> </span>
+                            <span className="token punctuation">{"{"}</span>
+                            <span className="token plain"> gap</span>
+                            <span className="token operator">:</span>
+                            <span className="token plain"> 1rem</span>
+                            <span className="token punctuation">;</span>
+                            <span className="token plain"> </span>
+                            <span className="token punctuation">{"}"}</span>
+                          </div>
+                          <div>
+                            <span className="token punctuation">{"}"}</span>
+                          </div>
+                        </code>
+                        <button className="prisma-copy-btn">
+                          <i className="fa-solid fa-copy"></i>
+                        </button>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        <span className="bg-[#E34F26]/20 text-[#E34F26] px-3 py-1 rounded-full text-sm font-medium">
+                          HTML5
+                        </span>
+                        <span className="bg-[#1572B6]/20 text-[#1572B6] px-3 py-1 rounded-full text-sm font-medium">
+                          CSS3
+                        </span>
+                        <span className="bg-yellow-500/20 text-yellow-300 px-3 py-1 rounded-full text-sm font-medium">
+                          JavaScript
+                        </span>
+                        <span className="bg-green-500/20 text-green-300 px-3 py-1 rounded-full text-sm font-medium">
+                          WordPress
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="prisma-job-card group hover:scale-[1.02] transition-all duration-300">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <span className="bg-yellow-500/20 text-yellow-300 px-3 py-1 rounded-full text-sm font-semibold">
+                          Foundation
+                        </span>
+                        <span className="text-[#71E8DF] font-semibold">
+                          2018 - 2020
+                        </span>
+                      </div>
+
+                      <h3 className="text-3xl font-semibold text-white">
+                        Junior Developer
+                      </h3>
+                      <p className="text-[#71E8DF] font-medium text-xl">
+                        WebDev Agency
+                      </p>
+
+                      <div className="space-y-4 text-white/80 text-lg">
+                        <p>
+                          Started my journey building responsive websites and
+                          learning modern development practices in a fast-paced
+                          agency environment.
+                        </p>
+                        <div className="space-y-3">
+                          <div className="flex items-start gap-3">
+                            <span className="text-[#71E8DF] mt-1">▸</span>
+                            <span>
+                              Delivered 20+ client websites using HTML5, CSS3,
+                              and JavaScript
+                            </span>
+                          </div>
+                          <div className="flex items-start gap-3">
+                            <span className="text-[#71E8DF] mt-1">▸</span>
+                            <span>
+                              Learned responsive design and cross-browser
+                              compatibility
+                            </span>
+                          </div>
+                          <div className="flex items-start gap-3">
+                            <span className="text-[#71E8DF] mt-1">▸</span>
+                            <span>
+                              Gained experience with WordPress and client
+                              communication
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <ul className="space-y-3 text-white/80">
-                <li className="flex items-start gap-3">
-                  <span className="text-green-400 mt-1">▸</span>
-                  Built MVP from scratch, leading to $500k seed funding
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-green-400 mt-1">▸</span>
-                  Implemented CI/CD pipeline reducing deployment time by 80%
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-green-400 mt-1">▸</span>
-                  Designed and developed RESTful APIs handling 10k+
-                  requests/minute
-                </li>
-              </ul>
+              <div className="prisma-timeline-item" data-animate="true">
+                <div className="prisma-timeline-icon hover:scale-110 transition-all duration-300 group">
+                  <span className="text-[#71E8DF] font-bold text-lg">Now</span>
+                </div>
+                <div className="timeline-cards">
+                  <div className="prisma-job-card group hover:scale-[1.02] transition-all duration-300">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <span className="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                          Evolution
+                        </span>
+                        <span className="text-[#71E8DF] font-semibold">
+                          2018 - Present
+                        </span>
+                      </div>
+
+                      <h3 className="text-3xl font-semibold text-white">
+                        Continuous Learning Journey
+                      </h3>
+                      <p className="text-[#71E8DF] font-medium text-xl">
+                        From HTML to Modern Full-Stack
+                      </p>
+
+                      <div className="space-y-4 text-white/80 text-lg">
+                        <p>
+                          My development journey: fully committed to growth,
+                          continuous learning, and innovation. Building amazing
+                          digital experiences with modern technologies.
+                        </p>
+                        <div className="space-y-3">
+                          <div className="flex items-start gap-3">
+                            <span className="text-[#71E8DF] mt-1">▸</span>
+                            <span>
+                              Evolved from HTML/CSS to full TypeScript ecosystem
+                            </span>
+                          </div>
+                          <div className="flex items-start gap-3">
+                            <span className="text-[#71E8DF] mt-1">▸</span>
+                            <span>
+                              Built type-safe applications with modern
+                              frameworks
+                            </span>
+                          </div>
+                          <div className="flex items-start gap-3">
+                            <span className="text-[#71E8DF] mt-1">▸</span>
+                            <span>
+                              Always learning new technologies and best
+                              practices
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="prisma-content-card postgres group hover:scale-[1.02] transition-all duration-300">
+                    <div className="space-y-6">
+                      <div className="prisma-tabs">
+                        <button className="prisma-tab active">
+                          evolution.ts
+                        </button>
+                        <button className="prisma-tab">types.d.ts</button>
+                        <button className="prisma-tab">career.config.ts</button>
+                      </div>
+                      <div className="prisma-code-block">
+                        <code className="text-white">
+                          <div className="mb-2">
+                            <span className="token keyword">interface</span>
+                            <span className="token plain"> </span>
+                            <span className="token class-name">
+                              DeveloperGrowth
+                            </span>
+                            <span className="token plain"> </span>
+                            <span className="token punctuation">{"{"}</span>
+                          </div>
+                          <div className="ml-4 mb-2">
+                            <span className="token plain">skills</span>
+                            <span className="token operator">:</span>
+                            <span className="token plain"> string</span>
+                            <span className="token punctuation">[</span>
+                            <span className="token punctuation">]</span>
+                          </div>
+                          <div className="ml-4 mb-2">
+                            <span className="token plain">experience</span>
+                            <span className="token operator">:</span>
+                            <span className="token plain"> number</span>
+                          </div>
+                          <div className="ml-4 mb-2">
+                            <span className="token plain">passion</span>
+                            <span className="token operator">:</span>
+                            <span className="token plain"> boolean</span>
+                          </div>
+                          <div className="mb-2">
+                            <span className="token punctuation">{"}"}</span>
+                          </div>
+                          <div className="mb-4"></div>
+                          <div className="mb-2">
+                            <span className="token keyword">const</span>
+                            <span className="token plain"> myJourney</span>
+                            <span className="token operator">:</span>
+                            <span className="token plain">
+                              {" "}
+                              DeveloperGrowth ={" "}
+                            </span>
+                            <span className="token punctuation">{"{"}</span>
+                          </div>
+                          <div className="ml-4 mb-2">
+                            <span className="token plain">skills</span>
+                            <span className="token operator">:</span>
+                            <span className="token plain"> </span>
+                            <span className="token punctuation">[</span>
+                            <span className="token string">
+                              &apos;React&apos;
+                            </span>
+                            <span className="token punctuation">,</span>
+                            <span className="token plain"> </span>
+                            <span className="token string">
+                              &apos;Node.js&apos;
+                            </span>
+                            <span className="token punctuation">,</span>
+                            <span className="token plain"> </span>
+                            <span className="token string">
+                              &apos;TypeScript&apos;
+                            </span>
+                            <span className="token punctuation">]</span>
+                            <span className="token punctuation">,</span>
+                          </div>
+                          <div className="ml-4 mb-2">
+                            <span className="token plain">experience</span>
+                            <span className="token operator">:</span>
+                            <span className="token plain"> 5</span>
+                            <span className="token punctuation">,</span>
+                          </div>
+                          <div className="ml-4 mb-2">
+                            <span className="token plain">passion</span>
+                            <span className="token operator">:</span>
+                            <span className="token plain"> </span>
+                            <span className="token boolean">true</span>
+                          </div>
+                          <div>
+                            <span className="token punctuation">{"}"}</span>
+                          </div>
+                        </code>
+                        <button className="prisma-copy-btn">
+                          <i className="fa-solid fa-copy"></i>
+                        </button>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        <span className="bg-[#3178C6]/20 text-[#3178C6] px-3 py-1 rounded-full text-sm font-medium">
+                          TypeScript
+                        </span>
+                        <span className="bg-[#61DAFB]/20 text-[#61DAFB] px-3 py-1 rounded-full text-sm font-medium">
+                          React
+                        </span>
+                        <span className="bg-[#68A063]/20 text-[#68A063] px-3 py-1 rounded-full text-sm font-medium">
+                          Node.js
+                        </span>
+                        <span className="bg-purple-500/20 text-purple-300 px-3 py-1 rounded-full text-sm font-medium">
+                          Next.js
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+        <TimelineAnimation />
       </section>
 
       <section id="about" className="py-20 px-6 bg-black">
@@ -392,7 +924,7 @@ export default function Home() {
             About
           </h2>
           <div className="card-blur rounded-3xl p-8">
-            <div className="grid md:grid-cols-3 gap-12">
+            <div className="grid md:grid-cols-3 gap-16">
               <div className="md:col-span-2">
                 <h3 className="text-xl md:text-2xl font-semibold mb-6 tracking-tight">
                   My Approach
