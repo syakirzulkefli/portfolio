@@ -445,13 +445,19 @@ body {
   .prisma-timeline-item {
     min-height: auto;
     padding: 2rem 0;
+    flex-direction: column;
+    align-items: center;
   }
 
   .prisma-timeline-icon {
-    left: 2rem;
-    transform: translateY(-50%);
+    position: relative;
+    left: auto;
+    top: auto;
+    transform: none;
     width: 48px;
     height: 48px;
+    margin-bottom: 1.5rem;
+    order: -1;
   }
 
   .prisma-timeline-icon span {
@@ -459,13 +465,12 @@ body {
   }
 
   .prisma-timeline-line {
-    left: 2rem;
-    transform: none;
-    height: 100%;
+    display: none;
   }
 
   .timeline-cards {
-    margin-left: 5rem;
+    margin-left: 0;
+    width: 100%;
   }
 }
 

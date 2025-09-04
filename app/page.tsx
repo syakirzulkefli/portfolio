@@ -2,6 +2,8 @@ import Navigation from "./components/Navigation";
 import FloatingParticles from "./components/FloatingParticles";
 import TechStackAnimation from "./components/TechStackAnimation";
 import TimelineAnimation from "../components/TimelineAnimation";
+import ScrollingGallery from "./components/ScrollingGallery";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 export default function Home() {
   return (
@@ -10,7 +12,7 @@ export default function Home() {
       <Navigation />
 
       <section
-        className="min-h-screen flex items-center justify-center px-6 relative"
+        className="min-h-screen flex items-center justify-center px-6 relative pt-20"
         style={{
           background: `
             radial-gradient(69.74% 43.14% at 76.7% 39.73%, 
@@ -1018,143 +1020,116 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-20 px-6 bg-black">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-semibold text-center mb-4 gradient-text leading-tight tracking-tight">
-            Client Testimonials
-          </h2>
-          <p className="text-center text-white/70 mb-16 max-w-2xl mx-auto text-lg leading-relaxed">
-            What colleagues and clients say about working with me
-          </p>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div className="card-blur rounded-2xl p-6">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
-                  JS
-                </div>
-                <div>
-                  <div className="font-semibold">John Smith</div>
-                  <div className="text-sm text-white/60">CTO, TechCorp</div>
-                </div>
-              </div>
-              <p className="text-white/80 italic mb-4">
-                &quot;Syakir delivered exceptional results on our platform
-                redesign. His technical expertise and attention to detail helped
-                us achieve a 40% increase in conversion rates.&quot;
-              </p>
-              <div className="flex text-yellow-400">⭐⭐⭐⭐⭐</div>
-            </div>
-
-            <div className="card-blur rounded-2xl p-6">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-teal-500 rounded-full flex items-center justify-center text-white font-bold">
-                  MJ
-                </div>
-                <div>
-                  <div className="font-semibold">Maria Johnson</div>
-                  <div className="text-sm text-white/60">
-                    Product Manager, StartupXYZ
-                  </div>
-                </div>
-              </div>
-              <p className="text-white/80 italic mb-4">
-                &quot;Working with Syakir was a game-changer. He transformed our
-                MVP into a production-ready platform that helped secure our
-                Series A funding.&quot;
-              </p>
-              <div className="flex text-yellow-400">⭐⭐⭐⭐⭐</div>
-            </div>
-
-            <div className="card-blur rounded-2xl p-6">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold">
-                  DL
-                </div>
-                <div>
-                  <div className="font-semibold">David Lee</div>
-                  <div className="text-sm text-white/60">Senior Developer</div>
-                </div>
-              </div>
-              <p className="text-white/80 italic mb-4">
-                &quot;Syakir is an exceptional mentor and team lead. His code
-                reviews and architectural decisions have significantly improved
-                our development process.&quot;
-              </p>
-              <div className="flex text-yellow-400">⭐⭐⭐⭐⭐</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-20 px-6 bg-black">
-        <div className="max-w-6xl mx-auto text-center">
-          <h3 className="text-2xl font-bold mb-12 gradient-text">
-            Trusted by Leading Companies
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8 items-center opacity-60">
-            {[
-              "TechCorp",
-              "StartupXYZ",
-              "InnovateCo",
-              "BuildFast",
-              "ScaleUp",
-              "DevCorp",
-            ].map((company) => (
-              <div
-                key={company}
-                className="card-blur rounded-xl p-4 text-white/60 font-semibold"
-              >
-                {company}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <ErrorBoundary>
+        <ScrollingGallery />
+      </ErrorBoundary>
 
       <section id="contact" className="py-20 px-6 bg-black">
         <div className="max-w-4xl mx-auto">
-          <div className="card-blur rounded-3xl p-12 text-center">
-            <h2 className="text-4xl font-bold mb-6 gradient-text">
-              Let&apos;s Build Something Amazing
-            </h2>
-            <p className="text-white/70 text-xl mb-8 max-w-2xl mx-auto">
-              Ready to turn your ideas into reality? I&apos;m currently
-              available for senior engineering roles and complex project
-              collaborations.
-            </p>
+          <div className="card-blur rounded-3xl p-12 text-center relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-purple-500/5 pointer-events-none" />
 
-            <div className="grid md:grid-cols-3 gap-8 mb-12">
-              <div className="text-center">
-                <div className="text-3xl mb-3">📧</div>
-                <div className="font-semibold text-white mb-2">Email</div>
-                <div className="text-white/60">syakir@example.com</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl mb-3">💼</div>
-                <div className="font-semibold text-white mb-2">LinkedIn</div>
-                <div className="text-white/60">linkedin.com/in/syakir</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl mb-3">💻</div>
-                <div className="font-semibold text-white mb-2">GitHub</div>
-                <div className="text-white/60">github.com/syakir</div>
-              </div>
-            </div>
+            <div className="relative z-10">
+              <h2 className="text-4xl md:text-5xl font-bold mb-6 gradient-text">
+                Let&apos;s Build Something Amazing
+              </h2>
+              <p className="text-white/80 text-xl mb-4 max-w-3xl mx-auto font-light leading-relaxed">
+                Ready to turn your ideas into reality? I&apos;m currently
+                available for senior engineering roles and complex project
+                collaborations.
+              </p>
+              <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto rounded-full mb-8" />
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button className="bg-white text-slate-900 px-8 py-4 rounded-lg font-semibold hover:bg-white/90 transition-all glow-effect">
-                📧 Get In Touch
-              </button>
-              <button className="border border-white/20 text-white px-8 py-4 rounded-lg font-semibold hover:bg-white/5 transition-all">
-                📄 Download Resume
-              </button>
-            </div>
+              <div className="mb-12 max-w-4xl mx-auto">
+                <p className="text-blue-400 font-semibold mb-4 text-lg">
+                  Specialized in Full-Stack Architecture
+                </p>
+                <div className="flex flex-wrap justify-center gap-3 mb-8">
+                  <span className="bg-blue-500/20 text-blue-300 px-4 py-2 rounded-full text-sm font-medium border border-blue-500/30 backdrop-blur-sm">
+                    React & Next.js
+                  </span>
+                  <span className="bg-green-500/20 text-green-300 px-4 py-2 rounded-full text-sm font-medium border border-green-500/30 backdrop-blur-sm">
+                    Node.js & Express
+                  </span>
+                  <span className="bg-purple-500/20 text-purple-300 px-4 py-2 rounded-full text-sm font-medium border border-purple-500/30 backdrop-blur-sm">
+                    PostgreSQL & Redis
+                  </span>
+                  <span className="bg-orange-500/20 text-orange-300 px-4 py-2 rounded-full text-sm font-medium border border-orange-500/30 backdrop-blur-sm">
+                    AWS & Docker
+                  </span>
+                  <span className="bg-pink-500/20 text-pink-300 px-4 py-2 rounded-full text-sm font-medium border border-pink-500/30 backdrop-blur-sm">
+                    TypeScript
+                  </span>
+                </div>
+              </div>
 
-            <div className="mt-8 p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
-              <div className="flex items-center justify-center gap-2 text-green-400 font-semibold">
-                <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-                Available for new opportunities
+              <div className="grid md:grid-cols-3 gap-6 mb-12">
+                <div className="group bg-gradient-to-br from-gray-800/60 to-gray-900/80 border border-gray-700/30 rounded-xl p-6 hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10 backdrop-blur-sm">
+                  <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">
+                    📧
+                  </div>
+                  <div className="font-bold text-white mb-2 text-lg">Email</div>
+                  <div className="text-blue-400 font-medium">
+                    syakir@example.com
+                  </div>
+                  <div className="mt-3 text-xs text-white/50">
+                    Available 24/7
+                  </div>
+                </div>
+                <div className="group bg-gradient-to-br from-gray-800/60 to-gray-900/80 border border-gray-700/30 rounded-xl p-6 hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/10 backdrop-blur-sm">
+                  <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">
+                    💼
+                  </div>
+                  <div className="font-bold text-white mb-2 text-lg">
+                    LinkedIn
+                  </div>
+                  <div className="text-purple-400 font-medium">
+                    linkedin.com/in/syakir
+                  </div>
+                  <div className="mt-3 text-xs text-white/50">
+                    Professional Network
+                  </div>
+                </div>
+                <div className="group bg-gradient-to-br from-gray-800/60 to-gray-900/80 border border-gray-700/30 rounded-xl p-6 hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/10 backdrop-blur-sm">
+                  <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">
+                    💻
+                  </div>
+                  <div className="font-bold text-white mb-2 text-lg">
+                    GitHub
+                  </div>
+                  <div className="text-green-400 font-medium">
+                    github.com/syakir
+                  </div>
+                  <div className="mt-3 text-xs text-white/50">
+                    Open Source Portfolio
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+                <button className="group relative bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-xl font-bold hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-2xl hover:shadow-blue-500/25 hover:scale-105">
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    📧 Get In Touch
+                  </span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-500 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+                </button>
+                <button className="group relative bg-gray-800/50 border border-gray-600/50 text-white px-8 py-4 rounded-xl font-bold hover:bg-gray-700/50 hover:border-gray-500/50 transition-all duration-300 hover:scale-105">
+                  <span className="flex items-center justify-center gap-2">
+                    📄 Download Resume
+                  </span>
+                </button>
+              </div>
+
+              <div className="inline-flex items-center gap-3 p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-xl backdrop-blur-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50"></div>
+                  <span className="text-green-400 font-bold text-lg">
+                    Available for new opportunities
+                  </span>
+                </div>
+                <div className="text-white/50 text-sm border-l border-green-500/30 pl-3">
+                  Senior Full-Stack Developer
+                </div>
               </div>
             </div>
           </div>
