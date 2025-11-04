@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Syakir - Senior Full-Stack Developer | React, Node.js, TypeScript",
+  title: "Syakir | Portfolio",
   description:
     "Senior Full-Stack Engineer with expertise in React, Node.js, TypeScript, and AWS. Specialized in scalable web applications and system architecture. Available for senior engineering roles.",
   keywords: [

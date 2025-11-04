@@ -6,13 +6,16 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);
-  --horizontal-gap: 8rem;
+  --horizontal-gap: clamp(2rem, 8vw, 8rem);
 }
 
 html {
   scroll-behavior: smooth;
   background: #2d3748;
   overscroll-behavior: none;
+}
+:target {
+  scroll-margin-top: 90px; /* keeps anchored sections below the navbar */
 }
 
 body {
@@ -306,16 +309,16 @@ body {
   background: linear-gradient(
     to bottom,
     transparent 0%,
-    rgba(113, 232, 223, 0.2) 5%,
-    rgba(113, 232, 223, 0.6) 15%,
-    #71e8df 25%,
-    #71e8df 75%,
-    rgba(113, 232, 223, 0.6) 85%,
-    rgba(113, 232, 223, 0.2) 95%,
+    rgba(113, 232, 223, 0.3) 3%,
+    rgba(113, 232, 223, 0.7) 8%,
+    #71e8df 15%,
+    #71e8df 85%,
+    rgba(113, 232, 223, 0.7) 92%,
+    rgba(113, 232, 223, 0.3) 97%,
     transparent 100%
   );
   border-radius: 2px;
-  transition: all 0.3s ease;
+  height: 0;
 }
 
 .prisma-timeline:hover .prisma-timeline-line {

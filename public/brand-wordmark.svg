@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 200" fill="none">
+  <!-- Simplified wordmark placeholder: replace with your Canva export -->
+  <g>
+    <path d="M120 180c-66 0-120-54-120-120" stroke="white" stroke-width="8" fill="none"/>
+    <path d="M20 60c20-40 80-50 120 20 60 110 160 60 240-20 120-120 260-40 320 40 60 80 160 100 260 60" stroke="white" stroke-width="8" fill="none"/>
+    <text x="760" y="120" font-size="64" fill="white" font-family="serif" letter-spacing="12">MOHAMAD</text>
+    <text x="820" y="170" font-size="64" fill="white" font-family="serif" letter-spacing="12">SYAKIR</text>
+  </g>
+</svg>

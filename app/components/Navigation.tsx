@@ -1,10 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
+import Image from "next/image";
 
 export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrollY, setScrollY] = useState(0);
+  const [activeSection, setActiveSection] = useState<string | null>(null);
 
   const navItems = [
     { href: "#work", label: "Work" },
@@ -22,6 +25,50 @@ export default function Navigation() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    const ids = ["work", "experience", "about", "contact"];
+    const update = () => {
+      const center = window.innerHeight / 2;
+      let bestId: string | null = null;
+      let bestDist = Infinity;
+      for (const id of ids) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        const rect = el.getBoundingClientRect();
+        const elCenter = rect.top + rect.height / 2;
+        const dist = Math.abs(elCenter - center);
+        if (dist < bestDist) {
+          bestDist = dist;
+          bestId = id;
+        }
+      }
+      if (bestDist < window.innerHeight * 0.35) {
+        setActiveSection(bestId);
+      } else {
+        setActiveSection(null);
+      }
+    };
+    const onScroll = () => requestAnimationFrame(update);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    update();
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, []);
+
+  const itemClass = useMemo(
+    () => (isActive: boolean) =>
+      [
+        "text-sm font-medium px-4 py-2 rounded-full tracking-tight transition-colors duration-200",
+        isActive
+          ? "text-white bg-white/10 ring-1 ring-white/10 backdrop-blur-sm shadow-[0_0_20px_rgba(113,232,223,0.12)]"
+          : "text-white/80 hover:text-white hover:bg-white/10",
+      ].join(" "),
+    []
+  );
+
   return (
     <>
       <nav
@@ -32,14 +79,16 @@ export default function Navigation() {
         }}
       >
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">S</span>
-            </div>
-            <div className="text-xl font-semibold gradient-text tracking-tight">
-              Syakir
-            </div>
-          </div>
+          <Link href="/" aria-label="Home" className="flex items-center">
+            <Image
+              src="/syakir (A2 (Landscape)) new.svg"
+              alt="Mohamad Syakir"
+              width={1200}
+              height={300}
+              priority
+              className="h-20 md:h-24 w-auto shrink-0 drop-shadow-[0_0_8px_rgba(0,0,0,0.5)]"
+            />
+          </Link>
 
           <div className="hidden md:block">
             <div
@@ -48,21 +97,26 @@ export default function Navigation() {
                 background: "rgba(0, 0, 0, 0.8)",
               }}
             >
-              {navItems.map((item) => (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  className="text-white/80 hover:text-white transition-colors text-sm font-medium px-4 py-2 rounded-full hover:bg-white/10 tracking-tight"
-                >
-                  {item.label}
-                </a>
-              ))}
+              {navItems.map((item) => {
+                const id = item.href.replace("#", "");
+                const isActive = activeSection === id;
+                return (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    aria-current={isActive ? "page" : undefined}
+                    className={itemClass(isActive)}
+                  >
+                    {item.label}
+                  </a>
+                );
+              })}
             </div>
           </div>
 
           <div className="hidden md:flex items-center space-x-4">
             <a
-              href="https://github.com/yourusername" // Update with your GitHub username
+              href="https://github.com/syakirzulkefli"
               target="_blank"
               rel="noopener noreferrer"
               className="text-white/60 hover:text-white transition-colors p-2 hover:scale-110 duration-200"
@@ -78,19 +132,23 @@ export default function Navigation() {
             </a>
 
             <a
-              href="https://linkedin.com/in/yourusername" // Update with your LinkedIn username
+              href="https://linkedin.com/in/syakir-zulkefli-5b67aa297/"
               target="_blank"
               rel="noopener noreferrer"
               className="text-white/60 hover:text-white transition-colors p-2 hover:scale-110 duration-200"
               aria-label="LinkedIn Profile"
             >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M16.338 16.338H13.67V12.16c0-.995-.017-2.277-1.387-2.277-1.39 0-1.601 1.086-1.601 2.207v4.248H8.014v-8.59h2.559v1.174h.037c.356-.675 1.227-1.387 2.526-1.387 2.703 0 3.203 1.778 3.203 4.092v4.711zM5.005 6.575a1.548 1.548 0 11-.003-3.096 1.548 1.548 0 01.003 3.096zm-1.337 9.763H6.34v-8.59H3.667v8.59zM17.668 1H2.328C1.595 1 1 1.581 1 2.298v15.403C1 18.418 1.595 19 2.328 19h15.34c.734 0 1.332-.582 1.332-1.299V2.298C19 1.581 18.402 1 17.668 1z"/>
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
               </svg>
             </a>
 
-            <button 
-              onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+            <button
+              onClick={() =>
+                document
+                  .getElementById("contact")
+                  ?.scrollIntoView({ behavior: "smooth" })
+              }
               className="bg-gradient-to-r from-blue-500 to-purple-600 text-white text-sm font-medium px-6 py-2 rounded-full hover:from-blue-600 hover:to-purple-700 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-blue-500/25"
             >
               Get In Touch
@@ -134,16 +192,24 @@ export default function Navigation() {
         }}
       >
         <div className="flex flex-col items-center justify-center h-full space-y-8">
-          {navItems.map((item) => (
-            <a
-              key={item.href}
-              href={item.href}
-              className="text-white/80 hover:text-white transition-colors text-2xl font-medium"
-              onClick={() => setIsOpen(false)}
-            >
-              {item.label}
-            </a>
-          ))}
+          {navItems.map((item) => {
+            const id = item.href.replace("#", "");
+            const isActive = activeSection === id;
+            return (
+              <a
+                key={item.href}
+                href={item.href}
+                className={[
+                  "text-2xl font-medium transition-colors",
+                  isActive ? "text-white" : "text-white/80 hover:text-white",
+                ].join(" ")}
+                onClick={() => setIsOpen(false)}
+                aria-current={isActive ? "page" : undefined}
+              >
+                {item.label}
+              </a>
+            );
+          })}
         </div>
       </div>
     </>

@@ -9,6 +9,47 @@ export default function TimelineAnimation() {
       rootMargin: "0px 0px -100px 0px",
     };
 
+    const timelineItems = document.querySelectorAll('[data-animate="true"]');
+    const timelineLine = document.querySelector(
+      ".prisma-timeline-line"
+    ) as HTMLElement;
+    const timelineContainer = document.querySelector(".prisma-timeline");
+
+    const updateTimelineHeight = () => {
+      if (!timelineLine || !timelineContainer || timelineItems.length === 0)
+        return;
+
+      const containerRect = timelineContainer.getBoundingClientRect();
+      const containerTop = containerRect.top;
+      const viewportHeight = window.innerHeight;
+
+      let maxHeight = 0;
+      if (timelineItems.length > 0) {
+        const lastItem = timelineItems[timelineItems.length - 1];
+        const lastItemRect = lastItem.getBoundingClientRect();
+        const lastItemRelativeTop = lastItemRect.top - containerTop;
+        maxHeight = lastItemRelativeTop + lastItemRect.height / 2 + 100;
+      }
+
+      let lineHeight = 0;
+
+      if (containerTop < viewportHeight && containerTop + maxHeight > 0) {
+        const timelineStartScroll = Math.max(0, viewportHeight - containerTop);
+        const totalScrollableHeight = maxHeight + viewportHeight;
+        const scrollProgress = Math.min(
+          1,
+          timelineStartScroll / totalScrollableHeight
+        );
+
+        lineHeight = scrollProgress * maxHeight;
+
+        const leadDistance = 100;
+        lineHeight = Math.min(lineHeight + leadDistance, maxHeight);
+      }
+
+      timelineLine.style.height = `${Math.max(lineHeight, 0)}px`;
+    };
+
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry, index) => {
         if (entry.isIntersecting) {
@@ -31,8 +72,15 @@ export default function TimelineAnimation() {
       });
     }, observerOptions);
 
-    const timelineItems = document.querySelectorAll('[data-animate="true"]');
     timelineItems.forEach((item) => observer.observe(item));
+
+    const handleScroll = () => {
+      requestAnimationFrame(updateTimelineHeight);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+
+    updateTimelineHeight();
 
     const timelineIcons = document.querySelectorAll(".prisma-timeline-icon");
 
@@ -53,6 +101,7 @@ export default function TimelineAnimation() {
 
     return () => {
       observer.disconnect();
+      window.removeEventListener("scroll", handleScroll);
     };
   }, []);
 
