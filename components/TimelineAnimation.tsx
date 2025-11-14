@@ -13,41 +13,42 @@ export default function TimelineAnimation() {
     const timelineLine = document.querySelector(
       ".prisma-timeline-line"
     ) as HTMLElement;
-    const timelineContainer = document.querySelector(".prisma-timeline");
+    const timelineContainer = document.querySelector(
+      ".prisma-timeline"
+    ) as HTMLElement | null;
 
     const updateTimelineHeight = () => {
       if (!timelineLine || !timelineContainer || timelineItems.length === 0)
         return;
 
-      const containerRect = timelineContainer.getBoundingClientRect();
-      const containerTop = containerRect.top;
       const viewportHeight = window.innerHeight;
+      const viewportCenter = window.scrollY + viewportHeight / 2;
 
-      let maxHeight = 0;
-      if (timelineItems.length > 0) {
-        const lastItem = timelineItems[timelineItems.length - 1];
-        const lastItemRect = lastItem.getBoundingClientRect();
-        const lastItemRelativeTop = lastItemRect.top - containerTop;
-        maxHeight = lastItemRelativeTop + lastItemRect.height / 2 + 100;
+      const containerRect = timelineContainer.getBoundingClientRect();
+      const containerTop = containerRect.top + window.scrollY;
+
+      const lastItem = timelineItems[timelineItems.length - 1] as HTMLElement;
+      const lastItemRect = lastItem.getBoundingClientRect();
+      const lastItemCenter =
+        lastItemRect.top + window.scrollY + lastItemRect.height / 2;
+
+      const extraPadding = 120;
+      const maxHeight = Math.max(
+        0,
+        lastItemCenter - containerTop + extraPadding
+      );
+
+      if (viewportCenter <= containerTop) {
+        timelineLine.style.height = "0px";
+        return;
       }
 
-      let lineHeight = 0;
+      const leadDistance = 80;
+      const progressDistance = viewportCenter - containerTop + leadDistance;
+      const progress = Math.min(1, progressDistance / maxHeight);
+      const lineHeight = Math.min(maxHeight, maxHeight * progress);
 
-      if (containerTop < viewportHeight && containerTop + maxHeight > 0) {
-        const timelineStartScroll = Math.max(0, viewportHeight - containerTop);
-        const totalScrollableHeight = maxHeight + viewportHeight;
-        const scrollProgress = Math.min(
-          1,
-          timelineStartScroll / totalScrollableHeight
-        );
-
-        lineHeight = scrollProgress * maxHeight;
-
-        const leadDistance = 100;
-        lineHeight = Math.min(lineHeight + leadDistance, maxHeight);
-      }
-
-      timelineLine.style.height = `${Math.max(lineHeight, 0)}px`;
+      timelineLine.style.height = `${lineHeight}px`;
     };
 
     const observer = new IntersectionObserver((entries) => {

@@ -13,135 +13,135 @@ interface GalleryImage {
 const galleryImages: GalleryImage[] = [
   {
     id: 1,
-    src: "/galleryimage/WhatsApp Image 2025-07-01 at 15.06.34.jpeg",
-    alt: "Training Session 1",
+    src: "/galleryimage/kch_d1_2.jpeg",
+    alt: "Navy Training Session - Kuching",
     category: "Training",
   },
   {
     id: 2,
-    src: "/galleryimage/WhatsApp Image 2025-07-01 at 14.57.17.jpeg",
-    alt: "CSR Activity 1",
-    category: "CSR",
+    src: "/galleryimage/kch_d1_3.jpeg",
+    alt: "Navy Training Session - Kuching",
+    category: "Training",
   },
   {
     id: 3,
-    src: "/galleryimage/WhatsApp Image 2025-07-01 at 15.06.34 copy.jpeg",
-    alt: "Training Session 2",
+    src: "/galleryimage/kch_d1_4.jpeg",
+    alt: "Navy Training Session - Kuching",
     category: "Training",
   },
   {
     id: 4,
-    src: "/galleryimage/WhatsApp Image 2025-07-28 at 09.51.10.jpeg",
-    alt: "Community Event 1",
-    category: "Community",
+    src: "/galleryimage/kch_d1.jpeg",
+    alt: "Navy Training Session - Kuching",
+    category: "Training",
   },
   {
     id: 5,
-    src: "/galleryimage/WhatsApp Image 2025-07-28 at 09.51.11.jpeg",
-    alt: "Community Event 2",
-    category: "Community",
+    src: "/galleryimage/kch_d2.jpeg",
+    alt: "Navy Training Session 2 - Kuching",
+    category: "Training",
   },
   {
     id: 6,
-    src: "/galleryimage/WhatsApp Image 2025-07-28 at 16.15.38 (1).jpeg",
-    alt: "Workshop 1",
-    category: "Workshop",
+    src: "/galleryimage/kch_d2_2.jpeg",
+    alt: "Navy Training Session 2 - Kuching",
+    category: "Training",
   },
   {
     id: 7,
-    src: "/galleryimage/WhatsApp Image 2025-07-28 at 16.15.38.jpeg",
-    alt: "Workshop 2",
-    category: "Workshop",
+    src: "/galleryimage/kch_d2_3.jpeg",
+    alt: "Navy Training Session 2 - Kuching",
+    category: "Training",
   },
   {
     id: 8,
-    src: "/galleryimage/WhatsApp Image 2025-07-29 at 12.32.30.jpeg",
-    alt: "Team Activity 1",
-    category: "Team",
+    src: "/galleryimage/kch_d2_4.jpeg",
+    alt: "Navy Training Session 2 - Kuching",
+    category: "Training",
   },
   {
     id: 9,
-    src: "/galleryimage/WhatsApp Image 2025-08-03 at 11.00.23.jpeg",
-    alt: "CSR Activity 2",
-    category: "CSR",
+    src: "/galleryimage/kdsg_d1.jpeg",
+    alt: "Navy Training Session - KDSG",
+    category: "Training",
   },
   {
     id: 10,
-    src: "/galleryimage/WhatsApp Image 2025-08-13 at 09.29.16 (1).jpeg",
-    alt: "Training Session 3",
+    src: "/galleryimage/kdsg_d1.jpeg",
+    alt: "Navy Training Session - KDSG",
     category: "Training",
   },
   {
     id: 11,
-    src: "/galleryimage/WhatsApp Image 2025-08-13 at 09.29.16.jpeg",
-    alt: "Training Session 4",
+    src: "/galleryimage/kdsg_d1_2.jpeg",
+    alt: "Navy Training Session - KDSG",
     category: "Training",
   },
   {
     id: 12,
-    src: "/galleryimage/WhatsApp Image 2025-08-13 at 09.29.17.jpeg",
-    alt: "Training Session 5",
+    src: "/galleryimage/kk_prep_day.jpeg",
+    alt: "Venue Preparation - Kota Kinabalu",
     category: "Training",
   },
   {
     id: 13,
-    src: "/galleryimage/WhatsApp Image 2025-08-13 at 14.57.12 (1).jpeg",
-    alt: "Team Building 1",
-    category: "Team",
+    src: "/galleryimage/kk_second.jpg",
+    alt: "Navy Training Admin Session - Kota Kinabalu",
+    category: "Training",
   },
   {
     id: 14,
-    src: "/galleryimage/WhatsApp Image 2025-08-13 at 14.57.12.jpeg",
-    alt: "Team Building 2",
-    category: "Team",
+    src: "/galleryimage/kk_second_2.jpg",
+    alt: "Navy Training Admin Session - Kota Kinabalu",
+    category: "Training",
   },
   {
     id: 15,
-    src: "/galleryimage/WhatsApp Image 2025-08-13 at 14.57.13 (1).jpeg",
-    alt: "Team Building 3",
-    category: "Team",
+    src: "/galleryimage/kk_wrap_up.JPG",
+    alt: "Navy Group Photo - Kota Kinabalu",
+    category: "Training",
   },
   {
     id: 16,
-    src: "/galleryimage/WhatsApp Image 2025-08-13 at 14.57.13.jpeg",
-    alt: "Team Building 4",
-    category: "Team",
+    src: "/galleryimage/lumut_d1_2.jpeg",
+    alt: "Navy Training Session - Lumut",
+    category: "Training",
   },
   {
     id: 17,
-    src: "/galleryimage/WhatsApp Image 2025-08-14 at 09.21.06.jpeg",
-    alt: "Conference 1",
-    category: "Conference",
+    src: "/galleryimage/lumut_d1_3.jpeg",
+    alt: "Navy Training Session - Lumut",
+    category: "Training",
   },
   {
     id: 18,
-    src: "/galleryimage/WhatsApp Image 2025-08-14 at 09.21.09.jpeg",
-    alt: "Conference 2",
-    category: "Conference",
+    src: "/galleryimage/lumut_d1_3.jpeg",
+    alt: "Navy Training Session - Lumut",
+    category: "Training",
   },
   {
     id: 19,
-    src: "/galleryimage/WhatsApp Image 2025-08-14 at 09.21.10.jpeg",
-    alt: "Conference 3",
-    category: "Conference",
+    src: "/galleryimage/lumut_d1.jpeg",
+    alt: "Navy Training Session - Lumut",
+    category: "Training",
   },
   {
     id: 20,
-    src: "/galleryimage/WhatsApp Image 2025-08-14 at 09.21.12.jpeg",
-    alt: "Networking Event 1",
-    category: "Networking",
+    src: "/galleryimage/lumut_wrap_up.jpeg",
+    alt: "Navy Wrap Up - Lumut",
+    category: "Training",
   },
   {
     id: 21,
-    src: "/galleryimage/WhatsApp Image 2025-08-14 at 09.21.13.jpeg",
-    alt: "Networking Event 2",
-    category: "Networking",
+    src: "/galleryimage/th_postpkp_meet.jpg",
+    alt: "TrackerHero Post-PKP Meetup",
+    category: "TrackerHero",
   },
   {
     id: 22,
-    src: "/galleryimage/WhatsApp Image 2025-08-14 at 09.21.14.jpeg",
-    alt: "Networking Event 3",
-    category: "Networking",
+    src: "/galleryimage/th_site_visit.jpg",
+    alt: "TrackerHero Site Visit",
+    category: "TrackerHero",
   },
 ];
 
@@ -156,12 +156,11 @@ const splitImages = (images: GalleryImage[], columns: number) => {
 const getCategoryColor = (category: string) => {
   const colors = {
     Training: "bg-blue-500/20 text-blue-300 border-blue-500/30",
-    CSR: "bg-green-500/20 text-green-300 border-green-500/30",
-    Community: "bg-purple-500/20 text-purple-300 border-purple-500/30",
+    TrackerHero: "bg-green-500/20 text-green-300 border-green-500/30",
+    "Project Snapshot": "bg-purple-500/20 text-purple-300 border-purple-500/30",
+    Deployment: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30",
     Workshop: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",
-    Team: "bg-orange-500/20 text-orange-300 border-orange-500/30",
-    Conference: "bg-red-500/20 text-red-300 border-red-500/30",
-    Networking: "bg-pink-500/20 text-pink-300 border-pink-500/30",
+    Automation: "bg-orange-500/20 text-orange-300 border-orange-500/30",
   };
   return (
     colors[category as keyof typeof colors] ||
@@ -199,7 +198,6 @@ const GalleryCard = ({ image }: { image: GalleryImage }) => (
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-      {/* Category badge overlay */}
       <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
         <div
           className={`px-2 py-1 rounded-full text-xs font-medium border backdrop-blur-sm ${getCategoryColor(
@@ -211,7 +209,6 @@ const GalleryCard = ({ image }: { image: GalleryImage }) => (
       </div>
     </div>
 
-    {/* Enhanced text section */}
     <div className="p-4 bg-gradient-to-r from-gray-800/50 to-gray-800/30 backdrop-blur-sm">
       <div className="text-white text-sm font-semibold leading-tight mb-2 group-hover:text-blue-100 transition-colors duration-300">
         {image.alt}
@@ -228,7 +225,6 @@ const GalleryCard = ({ image }: { image: GalleryImage }) => (
       </div>
     </div>
 
-    {/* Subtle glow effect */}
     <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
   </div>
 );
@@ -237,15 +233,18 @@ const ScrollingColumn = ({
   images,
   direction = "up",
   speed = 50,
+  enableScroll = true,
 }: {
   images: GalleryImage[];
   direction?: "up" | "down";
   speed?: number;
+  enableScroll?: boolean;
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const isHovered = useRef(false);
 
   useEffect(() => {
+    if (!enableScroll) return;
     const scrollElement = scrollRef.current;
     if (!scrollElement) return;
 
@@ -281,7 +280,7 @@ const ScrollingColumn = ({
       clearTimeout(timeoutId);
       cancelAnimationFrame(animationId);
     };
-  }, [direction, speed]);
+  }, [direction, speed, enableScroll]);
 
   const handleMouseEnter = () => {
     isHovered.current = true;
@@ -291,16 +290,24 @@ const ScrollingColumn = ({
     isHovered.current = false;
   };
 
-  const duplicatedImages = [...images, ...images];
+  const duplicatedImages = enableScroll ? [...images, ...images] : images;
 
   return (
     <div
       ref={scrollRef}
-      className="h-full overflow-hidden cursor-pointer"
-      style={{
-        maskImage:
-          "linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)",
-      }}
+      className={
+        enableScroll
+          ? "h-full overflow-hidden cursor-pointer"
+          : "h-auto overflow-visible"
+      }
+      style={
+        enableScroll
+          ? {
+              maskImage:
+                "linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)",
+            }
+          : undefined
+      }
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
@@ -327,10 +334,11 @@ export default function ScrollingGallery() {
       ? galleryImages
       : galleryImages.filter((img) => img.category === selectedCategory);
 
-  const imageColumns = splitImages(filteredImages, 3);
+  const numColumns = Math.min(3, Math.max(1, filteredImages.length));
+  const imageColumns = splitImages(filteredImages, numColumns);
+  const enableScroll = filteredImages.length > numColumns * 2;
 
   useEffect(() => {
-    // Simulate loading delay for better UX
     const timer = setTimeout(() => setIsLoading(false), 300);
     return () => clearTimeout(timer);
   }, []);
@@ -340,16 +348,15 @@ export default function ScrollingGallery() {
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-20">
           <h2 className="text-4xl md:text-5xl font-bold text-center mb-6 gradient-text leading-tight tracking-tight">
-            My Activities & Contributions
+            Activities Gallery
           </h2>
           <p className="text-center text-white/80 mb-4 max-w-3xl mx-auto text-xl leading-relaxed font-light">
-            Capturing moments from training sessions, CSR activities, community
-            events, and professional engagements
+            Capturing highlights from Navy training sessions, TrackerHero
+            meetups, and project snapshots.
           </p>
-          <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto rounded-full" />
+          <div className="w-24 h-1 mt-15 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto rounded-full" />
         </div>
 
-        {/* Category Filter */}
         <div className="flex flex-wrap justify-center gap-3 mb-12">
           {categories.map((category) => (
             <button
@@ -376,13 +383,6 @@ export default function ScrollingGallery() {
 
         <div className="mb-16">
           <div className="text-center text-white/70 mb-8">
-            <h3 className="text-lg font-medium tracking-wide uppercase mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              ACTIVELY ENGAGED IN{" "}
-              <span className="text-blue-400 font-bold">
-                COMMUNITY BUILDING
-              </span>{" "}
-              AND PROFESSIONAL DEVELOPMENT
-            </h3>
             <div className="flex justify-center items-center gap-4">
               <div className="flex-1 h-px bg-gradient-to-r from-transparent to-blue-500/30" />
               <div className="w-2 h-2 bg-blue-400 rounded-full" />
@@ -412,27 +412,31 @@ export default function ScrollingGallery() {
           </div>
         ) : (
           <div
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 h-[600px] transition-opacity duration-500"
-            style={{
-              maskImage:
-                "linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)",
-            }}
+            className={`grid gap-6 transition-opacity duration-500 ${
+              numColumns === 1
+                ? "grid-cols-1"
+                : numColumns === 2
+                ? "grid-cols-1 md:grid-cols-2"
+                : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+            } ${enableScroll ? "h-[600px]" : ""}`}
+            style={
+              enableScroll
+                ? {
+                    maskImage:
+                      "linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)",
+                  }
+                : undefined
+            }
           >
-            <ScrollingColumn
-              images={imageColumns[0]}
-              direction="up"
-              speed={25}
-            />
-            <ScrollingColumn
-              images={imageColumns[1]}
-              direction="down"
-              speed={20}
-            />
-            <ScrollingColumn
-              images={imageColumns[2]}
-              direction="up"
-              speed={30}
-            />
+            {imageColumns.map((col, idx) => (
+              <ScrollingColumn
+                key={`col-${idx}`}
+                images={col}
+                direction={idx % 2 === 0 ? "up" : "down"}
+                speed={30}
+                enableScroll={enableScroll}
+              />
+            ))}
           </div>
         )}
       </div>

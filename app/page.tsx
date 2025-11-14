@@ -46,7 +46,7 @@ export default function Home() {
           <div className="mb-5 md:mb-6 relative z-10">
             <h1 className="text-[clamp(2rem,8vw,6rem)] md:text-[clamp(3rem,7vw,7rem)] font-semibold mb-6 text-shadow drop-shadow-sm leading-tight tracking-tight">
               <span className="gradient-text">Full-Stack</span> Software
-              Engineer
+              Developer
             </h1>
           </div>
 
@@ -104,8 +104,8 @@ export default function Home() {
             Featured Work
           </h2>
           <p className="text-center text-white/70 mb-16 max-w-2xl mx-auto text-lg leading-relaxed">
-            Selected projects that showcase problem-solving approach and
-            business impact
+            Projects that I've done so far, this includes official work and also
+            personal projects.
           </p>
 
           <div className="space-y-16">
@@ -123,9 +123,9 @@ export default function Home() {
                     System
                   </h3>
                   <p className="text-white/75 text-base md:text-lg mb-6 leading-relaxed font-normal">
-                    Developed for the Royal Malaysian Navy (MINDEF), supporting
-                    secure, large-scale operations across engineering, HR,
-                    logistics, finance, administration, and operations.
+                    Developed for the Royal Malaysian Navy (TLDM). Secure,
+                    large-scale operations across engineering, HR, logistics,
+                    finance, administration, and operations.
                   </p>
 
                   <div className="grid grid-cols-3 gap-6 mb-6">
@@ -298,7 +298,7 @@ export default function Home() {
             <div className="space-y-40">
               <div className="prisma-timeline-item" data-animate="true">
                 <div className="prisma-timeline-icon hover:scale-110 transition-all duration-300 group">
-                  <span className="text-[#71E8DF] font-bold text-lg">2022</span>
+                  <span className="text-[#71E8DF] font-bold text-lg">Now</span>
                 </div>
 
                 <div className="timeline-cards">
@@ -309,7 +309,7 @@ export default function Home() {
                           Current
                         </span>
                         <span className="text-[#71E8DF] font-semibold">
-                          2023 - Present
+                          Dec 2023 - Present
                         </span>
                       </div>
 
@@ -317,135 +317,51 @@ export default function Home() {
                         Full-Stack Software Developer
                       </h3>
                       <p className="text-[#71E8DF] font-medium text-xl">
-                        Current Company
+                        Tulip Resources Sdn. Bhd.
                       </p>
 
                       <div className="space-y-4 text-white/80 text-lg">
                         <p>
-                          Developing enterprise-level web applications using
-                          modern full-stack technologies. Building secure,
-                          scalable solutions with focus on performance and user
-                          experience.
+                          Developing RMN-IRIS, an enterprise-level web
+                          applications with modern full-stack technologies.
+                          Secure, scalable systems used by TLDM.
                         </p>
                         <div className="space-y-3">
                           <div className="flex items-start gap-3">
                             <span className="text-[#71E8DF] mt-1">▸</span>
-                            <span>
-                              Building responsive web applications with React
-                              and TypeScript
-                            </span>
+                            <span>Handling core authentication modules.</span>
                           </div>
                           <div className="flex items-start gap-3">
                             <span className="text-[#71E8DF] mt-1">▸</span>
                             <span>
-                              Implementing secure authentication and data
-                              management systems
+                              Building full-stack features end-to-end.
                             </span>
                           </div>
                           <div className="flex items-start gap-3">
                             <span className="text-[#71E8DF] mt-1">▸</span>
-                            <span>
-                              Collaborating with cross-functional teams on
-                              feature development
-                            </span>
+                            <span>Optimizing performance and reliability.</span>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="prisma-content-card accelerate group hover:scale-[1.02] transition-all duration-300">
-                    <div className="space-y-6">
-                      <div className="prisma-tabs">
-                        <button className="prisma-tab active">
-                          performance.tsx
-                        </button>
-                        <button className="prisma-tab">architecture.js</button>
-                      </div>
-                      <div className="prisma-code-block">
-                        <code className="text-white">
-                          <div className="mb-2">
-                            <span className="token keyword">const</span>
-                            <span className="token plain"> optimizeApp = </span>
-                            <span className="token keyword">async</span>
-                            <span className="token plain"> () </span>
-                            <span className="token operator">=&gt;</span>
-                            <span className="token plain"> </span>
-                            <span className="token punctuation">{"{"}</span>
-                          </div>
-                          <div className="ml-4 mb-2">
-                            <span className="token keyword">const</span>
-                            <span className="token plain"> result = </span>
-                            <span className="token keyword">await</span>
-                            <span className="token plain"> performance.</span>
-                            <span className="token function">improve</span>
-                            <span className="token punctuation">(</span>
-                            <span className="token punctuation">{"{"}</span>
-                          </div>
-                          <div className="ml-8 mb-2">
-                            <span className="token plain">loadTime</span>
-                            <span className="token operator">:</span>
-                            <span className="token string">
-                              {" "}
-                              &quot;60% faster&quot;
-                            </span>
-                            <span className="token punctuation">,</span>
-                          </div>
-                          <div className="ml-8 mb-2">
-                            <span className="token plain">users</span>
-                            <span className="token operator">:</span>
-                            <span className="token string">
-                              {" "}
-                              &quot;100k+ daily&quot;
-                            </span>
-                            <span className="token punctuation">,</span>
-                          </div>
-                          <div className="ml-8 mb-2">
-                            <span className="token plain">architecture</span>
-                            <span className="token operator">:</span>
-                            <span className="token string">
-                              {" "}
-                              &quot;microservices&quot;
-                            </span>
-                          </div>
-                          <div className="ml-4 mb-2">
-                            <span className="token punctuation">{"}"}</span>
-                            <span className="token punctuation">{")"}</span>
-                          </div>
-                          <div className="mb-4"></div>
-                          <div className="ml-4 mb-2">
-                            <span className="token keyword">return</span>
-                            <span className="token plain"> </span>
-                            <span className="token punctuation">{"{"}</span>
-                            <span className="token plain"> success</span>
-                            <span className="token operator">:</span>
-                            <span className="token boolean"> true</span>
-                            <span className="token plain">, result </span>
-                            <span className="token punctuation">{"}"}</span>
-                          </div>
-                          <div>
-                            <span className="token punctuation">{"}"}</span>
-                          </div>
-                        </code>
-                        <button className="prisma-copy-btn">
-                          <i className="fa-solid fa-copy"></i>
-                        </button>
-                      </div>
-
-                      <div className="flex flex-wrap gap-2">
-                        <span className="bg-[#61DAFB]/20 text-[#61DAFB] px-3 py-1 rounded-full text-sm font-medium">
-                          React
-                        </span>
-                        <span className="bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full text-sm font-medium">
-                          TypeScript
-                        </span>
-                        <span className="bg-purple-500/20 text-purple-300 px-3 py-1 rounded-full text-sm font-medium">
-                          AWS
-                        </span>
-                        <span className="bg-orange-500/20 text-orange-300 px-3 py-1 rounded-full text-sm font-medium">
-                          PostgreSQL
-                        </span>
-                      </div>
+                  <div className="prisma-content-card accelerate group hover:scale-[1.02] transition-all duration-300 flex flex-col gap-4 justify-center self-center">
+                    <span className="text-xs md:text-sm text-white/70 tracking-wide">
+                      n8n Flows
+                    </span>
+                    <div
+                      className="relative w-full overflow-hidden rounded-3xl bg-black/40 flex items-center justify-center"
+                      style={{ aspectRatio: "3418 / 1896" }}
+                    >
+                      <Image
+                        src="/galleryimage/n8n_screenshot.png"
+                        alt="n8n automation workflow screenshot"
+                        fill
+                        className="object-contain object-center"
+                        sizes="(min-width: 1024px) 40vw, (min-width: 768px) 60vw, 100vw"
+                        priority
+                      />
                     </div>
                   </div>
                 </div>
@@ -453,106 +369,90 @@ export default function Home() {
 
               <div className="prisma-timeline-item" data-animate="true">
                 <div className="prisma-timeline-icon hover:scale-110 transition-all duration-300 group">
-                  <span className="text-[#71E8DF] font-bold text-lg">2020</span>
+                  <span className="text-[#71E8DF] font-bold text-lg">2023</span>
                 </div>
                 <div className="timeline-cards">
+                  <div className="prisma-content-card group hover:scale-[1.02] transition-all duration-300 flex flex-col justify-center self-center">
+                    <div className="flex flex-col gap-5">
+                      <span className="text-xs md:text-sm text-white/70 tracking-wide">
+                        Products
+                      </span>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="rounded-xl p-5 border border-teal-500/30 bg-teal-500/10 flex flex-col items-center justify-center text-center">
+                          <div className="h-12 w-12 flex items-center justify-center">
+                            <Image
+                              src="/galleryimage/icons8-track-96.png"
+                              alt="TrackerHero route icon"
+                              width={44}
+                              height={44}
+                              className="object-contain h-11 w-11"
+                              priority={false}
+                            />
+                          </div>
+                          <span className="mt-2 text-xs text-white/80">TrackerHero</span>
+                        </div>
+                        <div className="rounded-xl p-5 border border-indigo-500/30 bg-indigo-500/10 flex flex-col items-center justify-center text-center">
+                          <div className="h-12 w-12 flex items-center justify-center">
+                            <i className="fa-solid fa-building text-indigo-300 text-[38px] leading-none" aria-hidden="true"></i>
+                          </div>
+                          <span className="mt-2 text-xs text-white/80">PropKita</span>
+                        </div>
+                        <div className="rounded-xl p-5 border border-amber-500/30 bg-amber-500/10 flex flex-col items-center justify-center text-center">
+                          <div className="h-12 w-12 flex items-center justify-center">
+                            <i className="fa-solid fa-square-parking text-amber-300 text-[38px] leading-none" aria-hidden="true"></i>
+                          </div>
+                          <span className="mt-2 text-xs text-white/80">LPR/ANPR</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                   <div className="prisma-job-card group hover:scale-[1.02] transition-all duration-300">
                     <div className="space-y-4">
                       <div className="flex items-center gap-3">
-                        <span className="bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full text-sm font-semibold">
+                        {/* <span className="bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full text-sm font-semibold">
                           Growth
-                        </span>
+                        </span> */}
                         <span className="text-[#71E8DF] font-semibold">
-                          2020 - 2022
+                          March 2023 - November 2023
                         </span>
                       </div>
 
                       <h3 className="text-3xl font-semibold text-white">
-                        Full-Stack Developer
+                        Account Manager
                       </h3>
                       <p className="text-[#71E8DF] font-medium text-xl">
-                        Previous Role
+                        Ultrack Technology Sdn. Bhd.
                       </p>
 
                       <div className="space-y-4 text-white/80 text-lg">
                         <p>
-                          Developed web applications using JavaScript and React.
-                          Learned modern development practices and gained
-                          experience with full-stack development workflows.
+                          Managed key client accounts, built lasting
+                          relationships, and coordinated with internal teams to
+                          deliver client-focused solutions.
                         </p>
                         <div className="space-y-3">
                           <div className="flex items-start gap-3">
                             <span className="text-[#71E8DF] mt-1">▸</span>
                             <span>
-                              Built interactive user interfaces with React and
-                              vanilla JavaScript
+                              Tracked project progress and provided regular
+                              updates to clients.
                             </span>
                           </div>
                           <div className="flex items-start gap-3">
                             <span className="text-[#71E8DF] mt-1">▸</span>
                             <span>
-                              Worked with APIs and integrated third-party
-                              services
+                              Facilitated collaboration between technical and
+                              business teams.
                             </span>
                           </div>
                           <div className="flex items-start gap-3">
                             <span className="text-[#71E8DF] mt-1">▸</span>
                             <span>
-                              Gained experience with version control and team
-                              collaboration
+                              Maintained documentation and ensured timely
+                              project completion.
                             </span>
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="prisma-content-card postgres group hover:scale-[1.02] transition-all duration-300">
-                    <div className="space-y-6">
-                      <div className="prisma-tabs">
-                        <button className="prisma-tab active">
-                          backend.ts
-                        </button>
-                        <button className="prisma-tab">deployment.yml</button>
-                      </div>
-                      <div className="prisma-code-block">
-                        <code className="text-white">
-                          <div className="mb-2">
-                            <span className="token keyword">export</span>
-                            <span className="token plain"> </span>
-                            <span className="token keyword">const</span>
-                            <span className="token plain"> system = </span>
-                            <span className="token punctuation">{"{"}</span>
-                          </div>
-                          <div className="ml-4 mb-2">
-                            <span className="token plain">api</span>
-                            <span className="token operator">:</span>
-                            <span className="token string">
-                              {" "}
-                              &quot;nodejs/express&quot;
-                            </span>
-                            <span className="token punctuation">,</span>
-                          </div>
-                          <div className="ml-4 mb-2">
-                            <span className="token plain">database</span>
-                            <span className="token operator">:</span>
-                            <span className="token string">
-                              {" "}
-                              &quot;postgresql&quot;
-                            </span>
-                            <span className="token punctuation">,</span>
-                          </div>
-                          <div className="ml-4 mb-2">
-                            <span className="token plain">cache</span>
-                            <span className="token operator">:</span>
-                            <span className="token string">
-                              {" "}
-                              &quot;redis&quot;
-                            </span>
-                          </div>
-                          <div className="mb-2">
-                            <span className="token punctuation">{"}"}</span>
-                          </div>
-                        </code>
                       </div>
                     </div>
                   </div>
@@ -561,154 +461,78 @@ export default function Home() {
 
               <div className="prisma-timeline-item" data-animate="true">
                 <div className="prisma-timeline-icon hover:scale-110 transition-all duration-300 group">
-                  <span className="text-[#71E8DF] font-bold text-lg">Now</span>
+                  <span className="text-[#71E8DF] font-bold text-lg">2021</span>
                 </div>
                 <div className="timeline-cards">
                   <div className="prisma-job-card group hover:scale-[1.02] transition-all duration-300">
                     <div className="space-y-4">
                       <div className="flex items-center gap-3">
-                        <span className="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                        {/* <span className="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
                           Evolution
-                        </span>
+                        </span> */}
                         <span className="text-[#71E8DF] font-semibold">
-                          2018 - Present
+                          Jan 2021 - Feb 2023
                         </span>
                       </div>
 
                       <h3 className="text-3xl font-semibold text-white">
-                        Continuous Learning Journey
+                        IT Support
                       </h3>
                       <p className="text-[#71E8DF] font-medium text-xl">
-                        From HTML to Modern Full-Stack
+                        Ultrack Technology Sdn. Bhd.
                       </p>
 
                       <div className="space-y-4 text-white/80 text-lg">
                         <p>
-                          My development journey: fully committed to growth,
-                          continuous learning, and innovation. Building amazing
-                          digital experiences with modern technologies.
+                          Assisted users with inquiries, provided solutions via
+                          chat and video calls, and supported individuals from
+                          diverse backgrounds.
                         </p>
                         <div className="space-y-3">
                           <div className="flex items-start gap-3">
                             <span className="text-[#71E8DF] mt-1">▸</span>
                             <span>
-                              Evolved from HTML/CSS to full TypeScript ecosystem
+                              Monitored system performance and escalated issues
+                              when needed.
                             </span>
                           </div>
                           <div className="flex items-start gap-3">
                             <span className="text-[#71E8DF] mt-1">▸</span>
                             <span>
-                              Built type-safe applications with modern
-                              frameworks
+                              Logged and tracked support requests for faster
+                              resolution.
                             </span>
                           </div>
                           <div className="flex items-start gap-3">
                             <span className="text-[#71E8DF] mt-1">▸</span>
                             <span>
-                              Always learning new technologies and best
-                              practices
+                              Ensured smooth daily operations for all active
+                              users.
                             </span>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                  <div className="prisma-content-card postgres group hover:scale-[1.02] transition-all duration-300">
-                    <div className="space-y-6">
-                      <div className="prisma-tabs">
-                        <button className="prisma-tab active">
-                          evolution.ts
-                        </button>
-                        <button className="prisma-tab">types.d.ts</button>
-                        <button className="prisma-tab">career.config.ts</button>
-                      </div>
-                      <div className="prisma-code-block">
-                        <code className="text-white">
-                          <div className="mb-2">
-                            <span className="token keyword">interface</span>
-                            <span className="token plain"> </span>
-                            <span className="token class-name">
-                              DeveloperGrowth
-                            </span>
-                            <span className="token plain"> </span>
-                            <span className="token punctuation">{"{"}</span>
+                  <div className="prisma-content-card group hover:scale-[1.02] transition-all duration-300 flex flex-col justify-center self-center">
+                    <div className="flex flex-col gap-5">
+                      <span className="text-xs md:text-sm text-white/70 tracking-wide">
+                        Product
+                      </span>
+                      <div className="grid grid-cols-1 gap-4 place-items-center">
+                        <div className="rounded-xl p-6 border border-teal-500/30 bg-teal-500/10 flex flex-col items-center justify-center text-center w-full max-w-[160px]">
+                          <div className="h-12 w-12 flex items-center justify-center">
+                            <Image
+                              src="/galleryimage/icons8-track-96.png"
+                              alt="TrackerHero route icon"
+                              width={44}
+                              height={44}
+                              className="object-contain h-11 w-11"
+                              priority={false}
+                            />
                           </div>
-                          <div className="ml-4 mb-2">
-                            <span className="token plain">skills</span>
-                            <span className="token operator">:</span>
-                            <span className="token plain"> string</span>
-                            <span className="token punctuation">[</span>
-                            <span className="token punctuation">]</span>
-                          </div>
-                          <div className="ml-4 mb-2">
-                            <span className="token plain">experience</span>
-                            <span className="token operator">:</span>
-                            <span className="token plain"> number</span>
-                          </div>
-                          <div className="ml-4 mb-2">
-                            <span className="token plain">passion</span>
-                            <span className="token operator">:</span>
-                            <span className="token plain"> boolean</span>
-                          </div>
-                          <div className="mb-2">
-                            <span className="token punctuation">{"}"}</span>
-                          </div>
-                          <div className="mb-4"></div>
-                          <div className="mb-2">
-                            <span className="token keyword">const</span>
-                            <span className="token plain"> myJourney</span>
-                            <span className="token operator">:</span>
-                            <span className="token plain">
-                              {" "}
-                              DeveloperGrowth ={" "}
-                            </span>
-                            <span className="token punctuation">{"{"}</span>
-                          </div>
-                          <div className="ml-4 mb-2">
-                            <span className="token plain">skills</span>
-                            <span className="token operator">:</span>
-                            <span className="token plain"> </span>
-                            <span className="token punctuation">[</span>
-                            <span className="token string">
-                              &apos;React&apos;
-                            </span>
-                            <span className="token punctuation">,</span>
-                            <span className="token plain"> </span>
-                            <span className="token string">
-                              &apos;Node.js&apos;
-                            </span>
-                            <span className="token punctuation">,</span>
-                            <span className="token plain"> </span>
-                            <span className="token string">
-                              &apos;TypeScript&apos;
-                            </span>
-                            <span className="token punctuation">]</span>
-                            <span className="token punctuation">,</span>
-                          </div>
-                          <div className="ml-4 mb-2">
-                            <span className="token plain">experience</span>
-                            <span className="token operator">:</span>
-                            <span className="token plain"> 5</span>
-                            <span className="token punctuation">,</span>
-                          </div>
-                          <div className="ml-4 mb-2">
-                            <span className="token plain">passion</span>
-                            <span className="token operator">:</span>
-                            <span className="token plain"> </span>
-                            <span className="token boolean">true</span>
-                            <span className="token punctuation">,</span>
-                          </div>
-                          <div className="ml-4 mb-2">
-                            <span className="token plain">employer</span>
-                            <span className="token operator">:</span>
-                            <span className="token string">
-                              &quot;Looking for senior opportunities&quot;
-                            </span>
-                          </div>
-                          <div className="mb-2">
-                            <span className="token punctuation">{"}"}</span>
-                          </div>
-                        </code>
+                          <span className="mt-2 text-sm text-white/85 font-medium">TrackerHero</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -720,7 +544,7 @@ export default function Home() {
       </section>
 
       {/* About */}
-      <section id="about" className="py-20 px-6 bg-black">
+      {/* <section id="about" className="py-20 px-6 bg-black">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-semibold gradient-text leading-tight tracking-tight mb-4">
@@ -870,11 +694,13 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Gallery */}
       <ErrorBoundary>
-        <ScrollingGallery />
+        <section id="gallery">
+          <ScrollingGallery />
+        </section>
       </ErrorBoundary>
 
       {/* Contact */}
@@ -884,74 +710,90 @@ export default function Home() {
             <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 px-4 py-2 rounded-full mb-8">
               <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
               <span className="text-green-400 text-sm font-medium">
-                Available for Projects
+                Available for New Project
               </span>
             </div>
 
             <h2 className="text-4xl md:text-6xl font-semibold mb-6 gradient-text leading-tight tracking-tight">
-              Let&apos;s Work Together
+              Get in Touch
             </h2>
             <p className="text-white/90 text-xl mb-4 max-w-3xl mx-auto font-light leading-relaxed">
-              Software Engineer with experience in secure enterprise systems.
-              Open to new opportunities and interesting projects.
+              Fullstack Software Developer experienced in secure enterprise
+              systems — open to remote work and new opportunities.
             </p>
 
-            <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-xl p-4 border border-purple-500/20 mb-8 max-w-2xl mx-auto">
-              <div className="grid grid-cols-2 gap-6 text-sm">
-                <div className="text-center">
-                  <div className="text-xl font-bold text-purple-300">2+</div>
-                  <div className="text-white/75">Total Experience</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-bold text-blue-300">
-                    2 months
-                  </div>
-                  <div className="text-white/75">Notice Period</div>
-                </div>
-              </div>
-            </div>
             <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto rounded-full mb-8" />
 
-            <div className="grid md:grid-cols-3 gap-6 mb-16">
-              <div className="group bg-gradient-to-br from-gray-800/60 to-gray-900/80 border border-gray-700/30 rounded-xl p-6 hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10 backdrop-blur-sm">
-                <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">
-                  📧
+            <div className="grid md:grid-cols-2 gap-6 mb-16 max-w-3xl mx-auto">
+              <a
+                href="https://mail.google.com/mail/?view=cm&fs=1&to=msyakirzulkefli@gmail.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group bg-gradient-to-br from-gray-800/60 to-gray-900/80 border border-gray-700/30 rounded-xl p-6 hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10 backdrop-blur-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 flex flex-col items-center text-center"
+              >
+                <div className="w-16 h-16 mb-5 flex items-center justify-center rounded-2xl bg-[#1A73E8]/10 border border-[#1A73E8]/30 group-hover:scale-105 transition-transform duration-300">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    x="0px"
+                    y="0px"
+                    width="100"
+                    height="100"
+                    viewBox="0 0 48 48"
+                  >
+                    <path
+                      fill="#4caf50"
+                      d="M45,16.2l-5,2.75l-5,4.75L35,40h7c1.657,0,3-1.343,3-3V16.2z"
+                    ></path>
+                    <path
+                      fill="#1e88e5"
+                      d="M3,16.2l3.614,1.71L13,23.7V40H6c-1.657,0-3-1.343-3-3V16.2z"
+                    ></path>
+                    <polygon
+                      fill="#e53935"
+                      points="35,11.2 24,19.45 13,11.2 12,17 13,23.7 24,31.95 35,23.7 36,17"
+                    ></polygon>
+                    <path
+                      fill="#c62828"
+                      d="M3,12.298V16.2l10,7.5V11.2L9.876,8.859C9.132,8.301,8.228,8,7.298,8h0C4.924,8,3,9.924,3,12.298z"
+                    ></path>
+                    <path
+                      fill="#fbc02d"
+                      d="M45,12.298V16.2l-10,7.5V11.2l3.124-2.341C38.868,8.301,39.772,8,40.702,8h0 C43.076,8,45,9.924,45,12.298z"
+                    ></path>
+                  </svg>
                 </div>
                 <div className="font-bold text-white mb-2 text-lg">Email</div>
-                <div className="text-blue-400 font-medium">
-                  syakir.career@gmail.com
+                <div className="font-medium text-[#8AB4F8]">
+                  msyakirzulkefli@gmail.com
                 </div>
-                <div className="mt-3 text-xs text-white/50">Available 24/7</div>
-              </div>
-              <div className="group bg-gradient-to-br from-gray-800/60 to-gray-900/80 border border-gray-700/30 rounded-xl p-6 hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/10 backdrop-blur-sm">
-                <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">
-                  💼
+              </a>
+              <a
+                href="https://wa.me/60134568185"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group bg-gradient-to-br from-gray-800/60 to-gray-900/80 border border-gray-700/30 rounded-xl p-6 hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/10 backdrop-blur-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-green-400 flex flex-col items-center text-center"
+              >
+                <div className="w-16 h-16 mb-5 flex items-center justify-center rounded-2xl bg-[#25D366]/10 border border-[#25D366]/30 group-hover:scale-105 transition-transform duration-300">
+                  <svg
+                    className="w-10 h-10"
+                    viewBox="0 0 32 32"
+                    aria-hidden="true"
+                    focusable="false"
+                  >
+                    <path
+                      d="M16.04 3A12.97 12.97 0 003.06 16.18a12.9 12.9 0 001.72 6.45L3 29l6.55-1.73a12.98 12.98 0 006.49 1.69h.01c7.14 0 12.96-5.75 12.96-12.84A12.7 12.7 0 0016.04 3zm.03 23.56a10.8 10.8 0 01-5.5-1.5l-.39-.23-3.88 1.03 1.04-3.79-.25-.39a10.78 10.78 0 01-1.65-5.83c0-5.97 4.89-10.82 10.9-10.82a10.6 10.6 0 017.58 3.13 10.64 10.64 0 013.15 7.55c0 5.97-4.89 10.82-10.9 10.82zm5.95-7.8c-.33-.17-1.94-.96-2.24-1.06-.3-.11-.52-.17-.74.17-.22.33-.86 1.05-1.06 1.27-.2.22-.39.25-.72.08-.33-.17-1.37-.5-2.6-1.6-.96-.86-1.61-1.91-1.8-2.23-.19-.33-.02-.51.14-.68.14-.14.33-.36.5-.55.17-.19.22-.33.33-.55.11-.22.06-.41-.03-.57-.08-.17-.74-1.78-1.02-2.44-.27-.65-.55-.56-.74-.57h-.64c-.22 0-.57.08-.86.42-.3.33-1.13 1.1-1.13 2.68 0 1.58 1.16 3.11 1.32 3.33.17.22 2.27 3.56 5.5 4.99.77.33 1.37.53 1.83.68.77.25 1.47.22 2.02.14.62-.09 1.94-.79 2.22-1.56.27-.77.27-1.43.19-1.56-.08-.13-.3-.2-.63-.36z"
+                      fill="#25D366"
+                    />
+                  </svg>
                 </div>
                 <div className="font-bold text-white mb-2 text-lg">
-                  LinkedIn
+                  WhatsApp
                 </div>
-                <div className="text-purple-400 font-medium">
-                  linkedin.com/in/syakir-career
-                </div>
-                <div className="mt-3 text-xs text-white/50">
-                  Professional Network
-                </div>
-              </div>
-              <div className="group bg-gradient-to-br from-gray-800/60 to-gray-900/80 border border-gray-700/30 rounded-xl p-6 hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/10 backdrop-blur-sm">
-                <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">
-                  🐙
-                </div>
-                <div className="font-bold text-white mb-2 text-lg">GitHub</div>
-                <div className="text-green-400 font-medium">
-                  github.com/syakir-dev
-                </div>
-                <div className="mt-3 text-xs text-white/50">
-                  Code Repository
-                </div>
-              </div>
+                <div className="text-green-400 font-medium">+60134568185</div>
+              </a>
             </div>
 
-            <div className="flex justify-center">
+            {/* <div className="flex justify-center">
               <div className="inline-flex items-center gap-3 p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-xl backdrop-blur-sm">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50"></div>
@@ -963,14 +805,17 @@ export default function Home() {
                   Software Engineer
                 </div>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </section>
 
       <footer className="py-12 px-6 border-t border-white/10 bg-black">
         <div className="max-w-6xl mx-auto text-center text-white/60">
-          <p>&copy; 2024 Syakir. Built with Next.js and Tailwind CSS.</p>
+          <p>
+            &copy; {new Date().getFullYear()} Syakir. Powered by Next.js and
+            Tailwind CSS.
+          </p>
         </div>
       </footer>
     </div>

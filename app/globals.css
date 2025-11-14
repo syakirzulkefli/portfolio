@@ -15,7 +15,7 @@ html {
   overscroll-behavior: none;
 }
 :target {
-  scroll-margin-top: 90px; /* keeps anchored sections below the navbar */
+  scroll-margin-top: 90px;
 }
 
 body {
