@@ -22,7 +22,7 @@ export default function Home() {
       <Navigation />
 
       <section
-        className="min-h-screen flex flex-col items-center justify-start px-6 relative pt-28 md:pt-32 pb-8 sm:pb-12"
+        className="min-h-[80vh] xl:min-h-[65vh] 2xl:min-h-[50vh] flex flex-col items-center justify-start px-6 relative pt-28 md:pt-32 pb-2 sm:pb-6"
         style={{
           background: `
             radial-gradient(69.74% 43.14% at 76.7% 39.73%, 
@@ -42,6 +42,15 @@ export default function Home() {
           `,
         }}
       >
+        <div className="pointer-events-none absolute inset-0">
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 55%, rgba(3,4,10,0.85) 75%, #000000 92%, #000000 100%)",
+            }}
+          ></div>
+        </div>
         <div className="max-w-6xl mx-auto text-center">
           <div className="mb-5 md:mb-6 relative z-10">
             <h1 className="text-[clamp(2rem,8vw,6rem)] md:text-[clamp(3rem,7vw,7rem)] font-semibold mb-6 text-shadow drop-shadow-sm leading-tight tracking-tight">
@@ -90,15 +99,16 @@ export default function Home() {
             </a>
           </div>
 
-          <div className="w-full max-w-6xl mx-auto mt-12 md:mt-16">
+          <div className="w-full max-w-6xl mx-auto mt-8 md:mt-12 lg:mt-14 overflow-hidden">
             <TechStackAnimation />
           </div>
         </div>
       </section>
 
+
       <TimelineAnimation />
 
-      <section id="work" className="py-20 px-6 bg-black">
+      <section id="work" className="pt-10 md:pt-12 pb-16 md:pb-20 px-6 bg-black">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-semibold text-center mb-4 gradient-text leading-tight tracking-tight">
             Featured Work
@@ -377,7 +387,7 @@ export default function Home() {
                       <span className="text-xs md:text-sm text-white/70 tracking-wide">
                         Products
                       </span>
-                      <div className="grid grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div className="rounded-xl p-5 border border-teal-500/30 bg-teal-500/10 flex flex-col items-center justify-center text-center">
                           <div className="h-12 w-12 flex items-center justify-center">
                             <Image
@@ -389,19 +399,31 @@ export default function Home() {
                               priority={false}
                             />
                           </div>
-                          <span className="mt-2 text-xs text-white/80">TrackerHero</span>
+                          <span className="mt-3 text-[11px] md:text-xs font-medium tracking-wide text-white/80">
+                            TrackerHero
+                          </span>
                         </div>
                         <div className="rounded-xl p-5 border border-indigo-500/30 bg-indigo-500/10 flex flex-col items-center justify-center text-center">
                           <div className="h-12 w-12 flex items-center justify-center">
-                            <i className="fa-solid fa-building text-indigo-300 text-[38px] leading-none" aria-hidden="true"></i>
+                            <i
+                              className="fa-solid fa-building text-indigo-300 text-[38px] leading-none"
+                              aria-hidden="true"
+                            ></i>
                           </div>
-                          <span className="mt-2 text-xs text-white/80">PropKita</span>
+                          <span className="mt-3 text-[11px] md:text-xs font-medium tracking-wide text-white/80">
+                            PropKita
+                          </span>
                         </div>
                         <div className="rounded-xl p-5 border border-amber-500/30 bg-amber-500/10 flex flex-col items-center justify-center text-center">
                           <div className="h-12 w-12 flex items-center justify-center">
-                            <i className="fa-solid fa-square-parking text-amber-300 text-[38px] leading-none" aria-hidden="true"></i>
+                            <i
+                              className="fa-solid fa-square-parking text-amber-300 text-[38px] leading-none"
+                              aria-hidden="true"
+                            ></i>
                           </div>
-                          <span className="mt-2 text-xs text-white/80">LPR/ANPR</span>
+                          <span className="mt-3 text-[11px] md:text-xs font-medium tracking-wide text-white/80">
+                            LPR/ANPR
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -531,7 +553,9 @@ export default function Home() {
                               priority={false}
                             />
                           </div>
-                          <span className="mt-2 text-sm text-white/85 font-medium">TrackerHero</span>
+                          <span className="mt-2 text-sm text-white/85 font-medium">
+                            TrackerHero
+                          </span>
                         </div>
                       </div>
                     </div>

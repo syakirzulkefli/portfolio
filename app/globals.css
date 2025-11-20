@@ -13,6 +13,7 @@ html {
   scroll-behavior: smooth;
   background: #2d3748;
   overscroll-behavior: none;
+  overflow-x: hidden;
 }
 :target {
   scroll-margin-top: 90px;
@@ -29,6 +30,7 @@ body {
   line-height: 1.6;
   font-weight: 400;
   overscroll-behavior: none;
+  overflow-x: hidden;
 }
 
 .gradient-text {
@@ -297,8 +299,26 @@ body {
   display: flex;
 }
 
+.mobile-marquee-track {
+  width: max-content;
+  animation: mobileMarquee 26s linear infinite;
+  will-change: transform;
+  transform: translate3d(-50%, 0, 0);
+}
+
+@keyframes mobileMarquee {
+  0% {
+    transform: translate3d(-50%, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
 .prisma-timeline {
   position: relative;
+  isolation: isolate;
+  width: 100%;
 }
 
 .prisma-timeline-line {
@@ -319,6 +339,17 @@ body {
   );
   border-radius: 2px;
   height: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.timeline-cards,
+.prisma-timeline-item,
+.prisma-timeline-icon,
+.prisma-content-card,
+.prisma-job-card {
+  position: relative;
+  z-index: 1;
 }
 
 .prisma-timeline:hover .prisma-timeline-line {
@@ -443,23 +474,27 @@ body {
   .timeline-cards {
     grid-template-columns: 1fr;
     gap: 2rem;
+    width: 100%;
+    margin-left: 0;
+    padding: 0 clamp(1rem, 6vw, 3rem);
   }
 
   .prisma-timeline-item {
     min-height: auto;
-    padding: 2rem 0;
+    padding: 4rem 0 2rem;
     flex-direction: column;
     align-items: center;
+    width: 100%;
   }
 
   .prisma-timeline-icon {
-    position: relative;
-    left: auto;
-    top: auto;
-    transform: none;
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translate(-50%, -50%);
     width: 48px;
     height: 48px;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0;
     order: -1;
   }
 
@@ -468,12 +503,16 @@ body {
   }
 
   .prisma-timeline-line {
-    display: none;
+    left: 50%;
+    transform: translateX(-50%);
   }
 
-  .timeline-cards {
-    margin-left: 0;
-    width: 100%;
+  .prisma-job-card {
+    background: rgba(13, 16, 25, 0.9);
+    border: 1px solid rgba(113, 232, 223, 0.12);
+    border-radius: 20px;
+    padding: 24px;
+    backdrop-filter: blur(12px);
   }
 }
 
@@ -594,13 +633,9 @@ body {
 }
 
 @media (max-width: 768px) {
-  .prisma-timeline-icon {
-    left: 24px;
-    transform: none;
-  }
-
+  .prisma-timeline-icon,
   .prisma-timeline-line {
-    left: 24px;
-    transform: none;
+    left: 50%;
+    transform: translateX(-50%);
   }
 }

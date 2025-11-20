@@ -246,40 +246,61 @@ export default function TechStackAnimation() {
 
   return (
     <div className="relative py-12" style={{ background: "transparent" }}>
-      <div className="max-w-6xl mx-auto relative overflow-hidden">
-        <div
-          className="absolute top-0 left-0 w-full h-full pointer-events-none z-10"
-          style={{
-            background: `linear-gradient(
-              to right,
-              rgba(0, 0, 0, 1) 0%,
-              rgba(0, 0, 0, 0.3) 5%,
-              transparent 12%,
-              transparent 88%,
-              rgba(0, 0, 0, 0.3) 95%,
-              rgba(0, 0, 0, 1) 100%
-            )`,
-          }}
-        ></div>
+      <div className="max-w-6xl w-full mx-auto relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none z-10 hidden xl:block">
+          <div className="absolute left-0 top-0 h-full w-16 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
+          <div className="absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-black/80 via-black/40 to-transparent" />
+        </div>
 
-        <Marquee
-          direction="right"
-          speed={100}
-          pauseOnHover={true}
-          gradient={false}
-          style={{ background: "transparent" }}
-        >
-          {techStack.map((tech, index) => (
-            <div
-              key={index}
-              className="inline-flex items-center justify-center mx-6 px-4 py-2 text-white text-xl font-semibold tracking-normal mr-4"
-              style={{ background: "transparent", minWidth: "260px" }}
-            >
-              <span className="mr-3 flex items-center">{tech.logo}</span>
-              {tech.name}
+        <div className="xl:hidden relative z-20 w-full overflow-hidden py-4 px-2 min-h-[64px]">
+          <div className="absolute inset-0 flex items-center">
+            <div className="mobile-marquee-track flex items-center gap-3 whitespace-nowrap w-max">
+              {[...techStack, ...techStack].map((tech, index) => (
+                <div
+                  key={`mobile-${tech.name}-${index}`}
+                  className="flex items-center gap-2 px-3 py-2 rounded-full bg-white/10 text-white text-sm font-medium"
+                >
+                  <span className="flex items-center [&>svg]:w-6 [&>svg]:h-6 [&>svg]:shrink-0">
+                    {tech.logo}
+                  </span>
+                  {tech.name}
+                </div>
+              ))}
             </div>
-          ))}
-        </Marquee>
+          </div>
+          <div className="pointer-events-none absolute inset-0 z-20">
+            <div className="absolute left-0 top-0 h-full w-24 bg-gradient-to-r from-black via-black/90 to-transparent" />
+            <div className="absolute right-0 top-0 h-full w-24 bg-gradient-to-l from-black via-black/90 to-transparent" />
+          </div>
+        </div>
+
+        <div className="hidden xl:block relative z-20">
+          <Marquee
+            className="w-full"
+            direction="right"
+            speed={60}
+            pauseOnHover={true}
+            gradient={false}
+            style={{ background: "transparent" }}
+          >
+            {techStack.map((tech, index) => (
+              <div
+                key={index}
+                className="inline-flex items-center justify-center mx-3 md:mx-6 px-4 py-2 text-white text-base md:text-xl font-semibold tracking-normal"
+                style={{ background: "transparent", minWidth: "200px" }}
+              >
+                <span className="mr-3 flex items-center [&>svg]:w-10 [&>svg]:h-10">
+                  {tech.logo}
+                </span>
+                {tech.name}
+              </div>
+            ))}
+          </Marquee>
+          <div className="pointer-events-none absolute inset-0 z-20">
+            <div className="absolute left-0 top-0 h-full w-48 bg-gradient-to-r from-black via-black/90 to-transparent" />
+            <div className="absolute right-0 top-0 h-full w-48 bg-gradient-to-l from-black via-black/90 to-transparent" />
+          </div>
+        </div>
       </div>
     </div>
   );

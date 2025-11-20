@@ -90,7 +90,7 @@ export default function Navigation() {
             />
           </Link>
 
-          <div className="hidden md:block">
+          <div className="hidden lg:block">
             <div
               className="flex items-center px-4 py-2 rounded-full"
               style={{
@@ -114,7 +114,7 @@ export default function Navigation() {
             </div>
           </div>
 
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden lg:flex items-center space-x-4">
             <a
               href="https://github.com/syakirzulkefli"
               target="_blank"
@@ -156,7 +156,7 @@ export default function Navigation() {
           </div>
 
           <button
-            className="md:hidden text-white p-2"
+            className="lg:hidden text-white p-2"
             onClick={() => setIsOpen(!isOpen)}
             aria-label="Toggle menu"
           >
@@ -182,7 +182,7 @@ export default function Navigation() {
       </nav>
 
       <div
-        className={`md:hidden fixed inset-0 z-40 transition-opacity duration-300 ${
+        className={`lg:hidden fixed inset-0 z-40 transition-opacity duration-300 ${
           isOpen ? "opacity-100 visible" : "opacity-0 invisible"
         }`}
         style={{

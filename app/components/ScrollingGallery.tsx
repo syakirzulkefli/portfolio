@@ -323,6 +323,7 @@ const ScrollingColumn = ({
 export default function ScrollingGallery() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [isLoading, setIsLoading] = useState(true);
+  const [viewportWidth, setViewportWidth] = useState(0);
 
   const categories = [
     "All",
@@ -334,13 +335,32 @@ export default function ScrollingGallery() {
       ? galleryImages
       : galleryImages.filter((img) => img.category === selectedCategory);
 
-  const numColumns = Math.min(3, Math.max(1, filteredImages.length));
+  const baseColumns = Math.min(3, Math.max(1, filteredImages.length));
+  const numColumns =
+    viewportWidth === 0
+      ? baseColumns
+      : viewportWidth < 768
+      ? 1
+      : viewportWidth < 1024
+      ? Math.min(baseColumns, 2)
+      : baseColumns;
   const imageColumns = splitImages(filteredImages, numColumns);
   const enableScroll = filteredImages.length > numColumns * 2;
+  const columnSpeeds = [25, 24, 23];
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 300);
     return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const updateViewport = () => {
+      if (typeof window === "undefined") return;
+      setViewportWidth(window.innerWidth);
+    };
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+    return () => window.removeEventListener("resize", updateViewport);
   }, []);
 
   return (
@@ -418,7 +438,7 @@ export default function ScrollingGallery() {
                 : numColumns === 2
                 ? "grid-cols-1 md:grid-cols-2"
                 : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-            } ${enableScroll ? "h-[600px]" : ""}`}
+            } ${enableScroll ? "h-[420px] md:h-[520px] lg:h-[600px]" : ""}`}
             style={
               enableScroll
                 ? {
@@ -432,8 +452,8 @@ export default function ScrollingGallery() {
               <ScrollingColumn
                 key={`col-${idx}`}
                 images={col}
-                direction={idx % 2 === 0 ? "up" : "down"}
-                speed={30}
+                direction="up"
+                speed={columnSpeeds[idx] ?? columnSpeeds[columnSpeeds.length - 1]}
                 enableScroll={enableScroll}
               />
             ))}
