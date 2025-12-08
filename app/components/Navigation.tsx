@@ -81,7 +81,7 @@ export default function Navigation() {
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" aria-label="Home" className="flex items-center">
             <Image
-              src="/syakir (A2 (Landscape)) new.svg"
+              src="/syakir_brand_logo_black.svg"
               alt="Mohamad Syakir"
               width={1200}
               height={300}
