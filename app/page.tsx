@@ -105,16 +105,18 @@ export default function Home() {
         </div>
       </section>
 
-
       <TimelineAnimation />
 
-      <section id="work" className="pt-10 md:pt-12 pb-16 md:pb-20 px-6 bg-black">
+      <section
+        id="work"
+        className="pt-10 md:pt-12 pb-16 md:pb-20 px-6 bg-black"
+      >
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-semibold text-center mb-4 gradient-text leading-tight tracking-tight">
             Featured Work
           </h2>
           <p className="text-center text-white/70 mb-16 max-w-2xl mx-auto text-lg leading-relaxed">
-            Projects that I've done so far, this includes official work and also
+            Projects that I&apos;ve done so far, this includes official work and also
             personal projects.
           </p>
 
@@ -288,6 +290,69 @@ export default function Home() {
         className="py-20 px-6 bg-black relative overflow-hidden"
       >
         {/* Experience timeline */}
+        <input
+          type="checkbox"
+          id="experience-modal-toggle"
+          className="peer hidden"
+        />
+        <div className="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 backdrop-blur-md peer-checked:flex">
+          <label
+            htmlFor="experience-modal-toggle"
+            className="absolute inset-0 cursor-pointer"
+            aria-label="Close full work experience"
+          />
+          <div className="relative mx-4 w-full max-w-3xl max-h-[80vh] overflow-y-auto rounded-3xl border border-white/15 bg-[#050816]/95 p-6 md:p-8 text-base text-white/80 shadow-2xl">
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <h4 className="text-xs md:text-sm font-semibold uppercase tracking-[0.22em] text-[#71E8DF]">
+                Full Work Experience
+              </h4>
+              <label
+                htmlFor="experience-modal-toggle"
+                className="cursor-pointer text-xs md:text-sm text-white/60 hover:text-white"
+              >
+                Close
+              </label>
+            </div>
+            <ul className="list-disc list-inside space-y-2 text-sm md:text-base">
+              <li>
+                Developed multiple submodules across Human Resource, Operations,
+                Engineering and Materiel modules, covering UI development, API
+                integration and data handling.
+              </li>
+              <li>
+                Implemented file upload, preview and deletion features using
+                MinIO S3, tied to backend validation and database records.
+              </li>
+              <li>
+                Worked directly with stakeholders to refine and validate
+                functional requirements, ensuring module behaviour aligned with
+                operational workflows.
+              </li>
+              <li>
+                Built and maintained workflow automations using n8n, replacing
+                earlier Node.js logic to support updated business processes.
+              </li>
+              <li>
+                Took over and continued development on existing modules to meet
+                release timelines, ensuring system stability and feature
+                continuity.
+              </li>
+              <li>
+                Participated in UAT, PAT and FAT testing cycles to verify
+                functionality, resolve issues and support acceptance processes.
+              </li>
+              <li>
+                Delivered training sessions for system users and administrators
+                covering module usage, workflows and best practices.
+              </li>
+              <li>
+                Authored user manuals, training materials and feature
+                documentation to support end-users and internal development
+                teams.
+              </li>
+            </ul>
+          </div>
+        </div>
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-semibold leading-tight mb-4">
@@ -351,6 +416,14 @@ export default function Home() {
                             <span className="text-[#71E8DF] mt-1">▸</span>
                             <span>Optimizing performance and reliability.</span>
                           </div>
+                        </div>
+                        <div className="pt-3">
+                          <label
+                            htmlFor="experience-modal-toggle"
+                            className="inline-flex cursor-pointer select-none text-sm font-medium text-[#71E8DF] hover:text-cyan-300"
+                          >
+                            <span>See more...</span>
+                          </label>
                         </div>
                       </div>
                     </div>
@@ -566,159 +639,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* About */}
-      {/* <section id="about" className="py-20 px-6 bg-black">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-semibold gradient-text leading-tight tracking-tight mb-4">
-              About Me
-            </h2>
-            <p className="text-white/70 text-lg max-w-2xl mx-auto">
-              From aviation maintenance to software development - a journey of
-              continuous learning and growth.
-            </p>
-          </div>
-
-          <div className="grid lg:grid-cols-3 gap-8 mb-16">
-            <div className="lg:col-span-2 card-blur rounded-2xl p-8">
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-2xl font-semibold text-white mb-4 flex items-center gap-3">
-                    <span className="text-3xl">🚀</span>
-                    My Development Journey
-                  </h3>
-                  <p className="text-white/80 text-lg leading-relaxed mb-6">
-                    Transitioned from helicopter maintenance engineering to
-                    software development through dedicated self-learning.
-                    Completed comprehensive courses from{" "}
-                    <span className="text-yellow-300 font-medium">
-                      Mosh Hamedani
-                    </span>
-                    covering modern web technologies and best practices.
-                  </p>
-
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-xl p-4 border border-blue-500/20">
-                      <h4 className="font-semibold text-blue-300 mb-3 flex items-center gap-2">
-                        💻 Technical Skills
-                      </h4>
-                      <div className="space-y-2 text-sm text-white/80">
-                        <div>• React & TypeScript Development</div>
-                        <div>• Next.js & Modern Web Frameworks</div>
-                        <div>• Full-Stack JavaScript Applications</div>
-                        <div>• Git Version Control & Collaboration</div>
-                      </div>
-                    </div>
-
-                    <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-xl p-4 border border-green-500/20">
-                      <h4 className="font-semibold text-green-300 mb-3 flex items-center gap-2">
-                        🎯 Learning Philosophy
-                      </h4>
-                      <div className="space-y-2 text-sm text-white/80">
-                        <div>• 2+ hours daily dedicated learning</div>
-                        <div>• Hands-on project-based approach</div>
-                        <div>• Continuous skill improvement</div>
-                        <div>• Industry best practices focus</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-3 pt-4">
-                  <button className="bg-green-500/20 hover:bg-green-500/30 text-green-300 px-6 py-3 rounded-lg transition-all font-medium border border-green-500/30 hover:scale-105">
-                    📥 Download Resume
-                  </button>
-                  <button className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 px-6 py-3 rounded-lg transition-all font-medium border border-blue-500/30 hover:scale-105">
-                    📊 View Projects
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              <div className="card-blur rounded-2xl p-6">
-                <div className="text-center mb-6">
-                  <div className="text-2xl font-bold text-white mb-2">
-                    Currently
-                  </div>
-                  <div className="text-green-400 font-semibold text-lg">
-                    Software Engineer
-                  </div>
-                  <div className="text-white/60 text-sm mt-2">
-                    Building scalable web applications
-                  </div>
-                </div>
-
-                <div className="space-y-3 text-sm">
-                  <div className="flex items-center gap-3 text-white/80">
-                    <span className="text-blue-400">📍</span>
-                    <span>Kuala Lumpur, Malaysia</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-white/80">
-                    <span className="text-green-400">💼</span>
-                    <span>Full-time Developer</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-white/80">
-                    <span className="text-purple-400">⏰</span>
-                    <span>MYT Timezone (UTC+8)</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-white/80">
-                    <span className="text-yellow-400">🗣️</span>
-                    <span>English & Bahasa Malaysia</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="card-blur rounded-2xl p-6">
-                <h4 className="font-semibold text-white mb-4 flex items-center gap-2">
-                  <span className="text-green-400">🎯</span>
-                  Availability
-                </h4>
-                <div className="space-y-3 text-sm text-white/80">
-                  <div className="flex items-center gap-3">
-                    <span className="text-green-400 text-lg">✓</span>
-                    <span>2 months notice period</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-blue-400 text-lg">🌐</span>
-                    <span>Remote/hybrid preferred</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-purple-400 text-lg">📋</span>
-                    <span>Open to new opportunities</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="card-blur rounded-2xl p-6">
-                <h4 className="font-semibold text-white mb-4 flex items-center gap-2">
-                  <span className="text-yellow-400">🎓</span>
-                  Education
-                </h4>
-                <div className="space-y-3">
-                  <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-lg p-3 border border-yellow-500/20">
-                    <div className="font-medium text-yellow-300 text-sm mb-1">
-                      Engineering Technology
-                    </div>
-                    <div className="text-white/60 text-xs">
-                      UniKL MIAT - Aviation Maintenance
-                    </div>
-                  </div>
-                  <div className="bg-gradient-to-r from-green-500/10 to-blue-500/10 rounded-lg p-3 border border-green-500/20">
-                    <div className="font-medium text-green-300 text-sm mb-1">
-                      Web Development
-                    </div>
-                    <div className="text-white/60 text-xs">
-                      Mosh Hamedani - React, TypeScript, Next.js
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section> */}
 
       {/* Gallery */}
       <ErrorBoundary>

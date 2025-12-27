@@ -1,5 +1,3 @@
-export type Theme = "light" | "dark";
-
 export type DomainId = "software" | "trading";
 
 export type SectionId =
@@ -58,21 +56,6 @@ export const sections: { id: SectionId | "all"; label: string }[] = [
   { id: "tradingTechnical", label: "Technical Analysis" },
   { id: "other", label: "Other" },
 ];
-
-export const domainSectionsMap: Record<DomainId, SectionId[]> = {
-  software: [
-    "java",
-    "javascript",
-    "typescript",
-    "react",
-    "node",
-    "css",
-    "tooling",
-    "algorithms",
-    "other",
-  ],
-  trading: ["tradingFundamentals", "tradingTechnical", "other"],
-};
 
 export const levels: { id: Level | "all"; label: string }[] = [
   { id: "all", label: "All levels" },

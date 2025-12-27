@@ -14,6 +14,7 @@ export default function Navigation() {
     { href: "#experience", label: "Experience" },
     { href: "#gallery", label: "Gallery" },
     { href: "#contact", label: "Contact" },
+    { href: "/notes", label: "Notes" },
   ];
 
   useEffect(() => {
