@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 const isValidDriveId = (id: string) => /^[A-Za-z0-9_-]{10,}$/.test(id);
 
@@ -32,4 +32,3 @@ export async function GET(
 
   return new NextResponse(upstream.body, { status: 200, headers });
 }
-

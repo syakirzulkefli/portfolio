@@ -5,5 +5,5 @@
   - `app/notes/content/<domain>/<section>/index.ts` defines the left menu (outline) and links to `.md`/`.mdx` files.
 - `app/notes/outline.ts` aggregates all domain outlines into `notesOutline`.
 - `app/notes/catalog.ts` builds the lightweight notes list (title/summary/tags/updatedAt) and resolves a note id to its markdown path.
+- `app/notes/generated/notes.generated.ts` is generated at build time from the outline + markdown files (used for Cloudflare deployment; no runtime `fs`).
 - `app/notes/mdx/MdxContent.tsx` renders MDX for the active note.
-

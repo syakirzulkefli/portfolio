@@ -3,8 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 33333",
-    "build": "next build",
+    "notes:generate": "tsc -p tsconfig.notes-gen.json && node dist-notes-gen/scripts/generate-notes.js",
+    "dev": "npm run notes:generate && next dev -p 33333",
+    "build": "npm run notes:generate && next build",
+    "pages:build": "npm run notes:generate && next build && next-on-pages",
     "start": "next start",
     "lint": "eslint"
   },
@@ -17,6 +19,7 @@
     "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
+    "@cloudflare/next-on-pages": "^1.13.16",
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
@@ -25,6 +28,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.5.2",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^4.57.0"
   }
 }

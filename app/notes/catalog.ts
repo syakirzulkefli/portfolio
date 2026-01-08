@@ -1,18 +1,12 @@
 import "server-only";
 
-import fs from "node:fs";
-import path from "node:path";
 import type { Note } from "./data";
 import { notesOutline } from "./outline";
+import { noteUpdatedAtById } from "./generated/notes.generated";
 
-const updatedAtFor = (relativePath: string) => {
-  try {
-    const stat = fs.statSync(path.join(process.cwd(), relativePath));
-    return new Date(stat.mtime).toISOString().slice(0, 10);
-  } catch {
-    return new Date().toISOString().slice(0, 10);
-  }
-};
+const updatedAtForId = (id: string) =>
+  noteUpdatedAtById[id as keyof typeof noteUpdatedAtById] ??
+  new Date().toISOString().slice(0, 10);
 
 export const getNotesIndex = (): Note[] =>
   notesOutline.flatMap((group) =>
@@ -28,7 +22,7 @@ export const getNotesIndex = (): Note[] =>
           level: item.level,
           summary: item.summary,
           tags: item.tags,
-          updatedAt: updatedAtFor(item.markdownPath),
+          updatedAt: updatedAtForId(item.id),
           pinned: item.pinned,
         }) satisfies Note
     )

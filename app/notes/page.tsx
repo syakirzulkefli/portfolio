@@ -1,12 +1,12 @@
-import fs from "node:fs";
-import path from "node:path";
-
 import NotesClient from "./NotesClient";
 import { getNotesIndex, markdownPathForNoteId } from "./catalog";
+import { noteSourceById } from "./generated/notes.generated";
 import MdxContent from "./mdx/MdxContent";
 import { notesOutline } from "./outline";
 
 type SearchParams = Record<string, string | string[] | undefined>;
+
+export const runtime = "edge";
 
 export default async function NotesPage({
   searchParams,
@@ -24,8 +24,8 @@ export default async function NotesPage({
     notes[0]?.id ||
     null;
   const markdownPath = activeNoteId ? markdownPathForNoteId(activeNoteId) : null;
-  const source = markdownPath
-    ? fs.readFileSync(path.join(process.cwd(), markdownPath), "utf8").trim()
+  const source = activeNoteId
+    ? noteSourceById[activeNoteId as keyof typeof noteSourceById] ?? ""
     : "";
 
   return (
