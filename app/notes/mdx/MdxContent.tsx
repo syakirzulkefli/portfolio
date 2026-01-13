@@ -1,10 +1,14 @@
 /* eslint-disable @next/next/no-img-element */
 import "server-only";
 
-import { evaluate } from "@mdx-js/mdx";
+import type { Root } from "hast";
+import { toJsxRuntime } from "hast-util-to-jsx-runtime";
 import remarkGfm from "remark-gfm";
+import remarkParse from "remark-parse";
+import remarkRehype from "remark-rehype";
 import type { ComponentProps, ReactElement } from "react";
-import * as runtime from "react/jsx-runtime";
+import { Fragment, jsx, jsxs } from "react/jsx-runtime";
+import { unified } from "unified";
 
 const cx = (...parts: Array<string | undefined | null | false>) =>
   parts.filter(Boolean).join(" ");
@@ -142,17 +146,22 @@ export default async function MdxContent({
 }: {
   source: string;
 }): Promise<ReactElement> {
-  const { default: Content } = (await evaluate(source, {
-    ...runtime,
-    remarkPlugins: [remarkGfm],
-    development: false,
-  })) as unknown as {
-    default: (props: { components?: object }) => ReactElement;
-  };
+  const processor = unified()
+    .use(remarkParse)
+    .use(remarkGfm)
+    .use(remarkRehype);
+
+  const tree = (await processor.run(processor.parse(source))) as Root;
+  const content = toJsxRuntime(tree, {
+    Fragment,
+    jsx,
+    jsxs,
+    components,
+  });
 
   return (
     <div className="space-y-4">
-      <Content components={components} />
+      {content}
     </div>
   );
 }
