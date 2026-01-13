@@ -6,8 +6,6 @@ import { notesOutline } from "./outline";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
-export const runtime = "edge";
-
 export default async function NotesPage({
   searchParams,
 }: {
