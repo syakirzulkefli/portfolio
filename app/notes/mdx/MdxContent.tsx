@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import "server-only";
 
 import { evaluate } from "@mdx-js/mdx";

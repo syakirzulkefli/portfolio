@@ -133,16 +133,32 @@ const CssIcon = () => (
   </svg>
 );
 
+const IconImage = ({
+  src,
+  alt,
+  invert,
+}: {
+  src: string;
+  alt: string;
+  invert?: boolean;
+}) => (
+  <Image
+    width={50}
+    height={50}
+    src={src}
+    alt={alt}
+    unoptimized
+    sizes="50px"
+    className="h-10 w-10"
+    style={invert ? { filter: "invert(1)" } : undefined}
+  />
+);
+
 const JavaIcon = ({ isDark }: { isDark: boolean }) => (
-  <img
-    width="50"
-    height="50"
+  <IconImage
     src="https://img.icons8.com/ios-filled/50/java-coffee-cup-logo--v1.png"
     alt="Java"
-    loading="lazy"
-    decoding="async"
-    className="h-10 w-10"
-    style={{ filter: isDark ? "invert(1)" : "none" }}
+    invert={isDark}
   />
 );
 
@@ -155,16 +171,11 @@ const Icons8MonoIcon = ({
   label: string;
   isDark: boolean;
 }) => (
-  <img
-    width="50"
-    height="50"
+  <IconImage
     src={`https://img.icons8.com/?size=50&id=${iconId}&format=png&color=${
       isDark ? "FFFFFF" : "000000"
     }`}
     alt={label}
-    loading="lazy"
-    decoding="async"
-    className="h-10 w-10"
   />
 );
 
@@ -177,16 +188,7 @@ const InvertingImgIcon = ({
   label: string;
   isDark: boolean;
 }) => (
-  <img
-    width="50"
-    height="50"
-    src={src}
-    alt={label}
-    loading="lazy"
-    decoding="async"
-    className="h-10 w-10"
-    style={{ filter: isDark ? "invert(1)" : "none" }}
-  />
+  <IconImage src={src} alt={label} invert={isDark} />
 );
 
 export default function NotesClient({
