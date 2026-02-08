@@ -6,7 +6,7 @@ import { toJsxRuntime } from "hast-util-to-jsx-runtime";
 import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
 import remarkRehype from "remark-rehype";
-import type { ComponentProps, ReactElement } from "react";
+import type { ComponentProps, ReactElement, ReactNode } from "react";
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import { unified } from "unified";
 
@@ -15,7 +15,7 @@ const cx = (...parts: Array<string | undefined | null | false>) =>
 
 type HighlightTokenType = "comment" | "string" | "keyword" | "number";
 
-const highlightJava = (code: string): ReactElement | Array<string | ReactElement> => {
+const highlightJava = (code: string): ReactNode => {
   const keywords = [
     "abstract",
     "assert",
@@ -124,7 +124,7 @@ const highlightJava = (code: string): ReactElement | Array<string | ReactElement
 const highlightCode = (
   code: string,
   language: string | null
-): ReactElement | Array<string | ReactElement> => {
+): ReactNode => {
   if (!language) return code;
   if (language === "java") return highlightJava(code);
   return code;
