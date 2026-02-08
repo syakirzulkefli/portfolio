@@ -184,7 +184,9 @@ export default function Navigation() {
 
       <div
         className={`lg:hidden fixed inset-0 z-40 transition-opacity duration-300 ${
-          isOpen ? "opacity-100 visible" : "opacity-0 invisible"
+          isOpen
+            ? "opacity-100 visible pointer-events-auto"
+            : "opacity-0 invisible pointer-events-none"
         }`}
         style={{
           backdropFilter: "blur(20px)",

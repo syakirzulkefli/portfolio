@@ -12,6 +12,7 @@ import {
   SectionId,
   SortBy,
   domains,
+  sections,
 } from "./data";
 import type { NotesOutlineGroup } from "./outline";
 
@@ -20,6 +21,56 @@ type NotesClientProps = {
   outline: NotesOutlineGroup[];
   initialActiveNoteId?: string | null;
   children?: ReactNode;
+};
+
+const normalizeForSearch = (input: string) =>
+  input
+    .toLowerCase()
+    .replace(/[_-]+/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const noteSearchHaystack = (note: Note) =>
+  normalizeForSearch(
+    [
+      note.id,
+      note.title,
+      note.summary,
+      note.chapterTitle,
+      note.section,
+      note.tags.join(" "),
+    ].join(" ")
+  );
+
+const noteMatchesQuery = (note: Note, normalizedTerms: string[]) => {
+  if (normalizedTerms.length === 0) return true;
+  const haystack = noteSearchHaystack(note);
+  return normalizedTerms.every((term) => haystack.includes(term));
+};
+
+const escapeRegExp = (value: string) =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const highlightSnippetParts = (text: string, terms: string[]) => {
+  if (!terms.length) return [text];
+  const escaped = terms.map(escapeRegExp).join("|");
+  if (!escaped) return [text];
+  const regex = new RegExp(`(${escaped})`, "gi");
+  const lowerTerms = terms.map((t) => t.toLowerCase());
+  return text.split(regex).filter(Boolean).map((part, idx) => {
+    const isMatch = lowerTerms.includes(part.toLowerCase());
+    return isMatch ? (
+      <mark
+        key={`${part}-${idx}`}
+        className="bg-amber-200/80 text-slate-900"
+      >
+        {part}
+      </mark>
+    ) : (
+      <span key={`${part}-${idx}`}>{part}</span>
+    );
+  });
 };
 
 const JsIcon = () => (
@@ -203,6 +254,14 @@ export default function NotesClient({
 
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [query, setQuery] = useState("");
+  const [contentMatchQuery, setContentMatchQuery] = useState("");
+  const [contentMatchIds, setContentMatchIds] = useState<Set<string> | null>(
+    null
+  );
+  const [contentSnippets, setContentSnippets] = useState<
+    Record<string, string[]>
+  >({});
+  const [isSearchingContent, setIsSearchingContent] = useState(false);
   const [notes] = useState<Note[]>(initialNotes);
   const [activeDomain, setActiveDomain] = useState<DomainId>("software");
   const [activeSection, setActiveSection] = useState<SectionId | "all">("all");
@@ -215,7 +274,76 @@ export default function NotesClient({
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [sectionsOpen, setSectionsOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement | null>(null);
+  const searchContainerRef = useRef<HTMLDivElement | null>(null);
   const lastDomainRef = useRef<DomainId | null>(null);
+  const [isResultsOpen, setIsResultsOpen] = useState(false);
+
+  const clearFilters = () => {
+    setQuery("");
+    setActiveTag(null);
+    setActiveLevel("all");
+    setActiveSection("all");
+  };
+
+  useEffect(() => {
+    const normalizedQuery = normalizeForSearch(query);
+    if (!normalizedQuery) {
+      setContentMatchQuery("");
+      setContentMatchIds(null);
+      setContentSnippets({});
+      setIsSearchingContent(false);
+      setIsResultsOpen(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeout = window.setTimeout(async () => {
+      setIsSearchingContent(true);
+      try {
+        const url = new URL("/api/notes/search", window.location.origin);
+        url.searchParams.set("q", query);
+        url.searchParams.set("domain", activeDomain);
+        const res = await fetch(url.toString(), { signal: controller.signal });
+        if (!res.ok) throw new Error(`Search failed: ${res.status}`);
+        const data = (await res.json()) as {
+          results?: {
+            id?: unknown;
+            snippets?: unknown;
+            matchesCount?: unknown;
+          }[];
+        };
+        const ids =
+          data.results
+            ?.map((r) => r?.id)
+            .filter((v): v is string => typeof v === "string") ?? [];
+        const snippets: Record<string, string[]> = {};
+        data.results?.forEach((r) => {
+          if (typeof r?.id === "string" && Array.isArray(r?.snippets)) {
+            snippets[r.id] = r.snippets
+              .filter((s): s is string => typeof s === "string")
+              .slice(0, 5);
+          }
+        });
+        setContentSnippets(snippets);
+        setContentMatchQuery(normalizedQuery);
+        setContentMatchIds(new Set(ids));
+        setIsResultsOpen(true);
+      } catch (err) {
+        if ((err as { name?: string } | null)?.name !== "AbortError") {
+          setContentMatchQuery(normalizedQuery);
+          setContentMatchIds(new Set());
+          setContentSnippets({});
+        }
+      } finally {
+        setIsSearchingContent(false);
+      }
+    }, 175);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timeout);
+    };
+  }, [query, activeDomain]);
 
   useEffect(() => {
     if (!initialActiveNoteId) return;
@@ -276,20 +404,21 @@ export default function NotesClient({
   );
 
   const filtered = useMemo(() => {
-    const q = query.toLowerCase().trim();
+    const normalizedQuery = normalizeForSearch(query);
+    const terms = normalizedQuery.split(" ").filter(Boolean);
+    const contentMatchesReady =
+      !!normalizedQuery && contentMatchQuery === normalizedQuery;
     return [...domainNotes]
       .filter((note) => {
         if (activeSection !== "all" && note.section !== activeSection)
           return false;
-        if (activeChapterId && note.chapterId !== activeChapterId) return false;
         if (activeLevel !== "all" && note.level !== activeLevel) return false;
         if (activeTag && !note.tags.includes(activeTag)) return false;
-        if (!q) return true;
-        return (
-          note.title.toLowerCase().includes(q) ||
-          note.summary.toLowerCase().includes(q) ||
-          note.tags.some((t) => t.toLowerCase().includes(q))
-        );
+        const metaMatch = noteMatchesQuery(note, terms);
+        if (!terms.length) return true;
+        if (metaMatch) return true;
+        if (!contentMatchesReady) return false;
+        return contentMatchIds?.has(note.id) ?? false;
       })
       .sort((a, b) => {
         if (sortBy === "recent") {
@@ -311,12 +440,47 @@ export default function NotesClient({
   }, [
     domainNotes,
     activeSection,
-    activeChapterId,
     activeLevel,
     activeTag,
     query,
     sortBy,
+    contentMatchQuery,
+    contentMatchIds,
   ]);
+
+  const filtersActive =
+    normalizeForSearch(query).length > 0 ||
+    activeSection !== "all" ||
+    activeLevel !== "all" ||
+    !!activeTag;
+
+  const queryNormalized = normalizeForSearch(query);
+  const contentSearchPending =
+    !!queryNormalized && contentMatchQuery !== queryNormalized;
+  const searchTerms = useMemo(
+    () => queryNormalized.split(" ").filter(Boolean),
+    [queryNormalized]
+  );
+
+  const searchResults = useMemo(() => {
+    if (!queryNormalized) return [];
+    return filtered.map((note) => ({
+      note,
+      snippets: contentSnippets[note.id] || [note.summary],
+    }));
+  }, [filtered, contentSnippets, queryNormalized]);
+
+  const handleResultClick = (note: Note) => {
+    setActiveTag(null);
+    setActiveLevel("all");
+    setActiveSection(note.section);
+    setActiveChapterId(note.chapterId);
+    setActiveNoteId(note.id);
+    setSectionsOpen(false);
+    setIsResultsOpen(false);
+    const main = document.getElementById("notes-main");
+    main?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -331,25 +495,33 @@ export default function NotesClient({
     const storedValid =
       !!stored && domainNotes.some((note) => note.id === stored);
 
+    const selectionPool = queryNormalized ? domainNotes : filtered;
+
     if ((domainChanged || !hasActiveInDomain) && storedValid) {
       setActiveNoteId(stored);
       return;
     }
     if (domainChanged || !hasActiveInDomain) {
-      if (filtered[0]?.id) {
-        setActiveNoteId(filtered[0].id);
+      if (selectionPool[0]?.id) {
+        setActiveNoteId(selectionPool[0].id);
       }
     }
-  }, [activeDomain, domainNotes, filtered, activeNoteId]);
+  }, [activeDomain, domainNotes, filtered, activeNoteId, queryNormalized]);
 
   const activeNote =
     filtered.find((note) => note.id === activeNoteId) || filtered[0] || null;
-  const hasNotes = filtered.length > 0;
+  const hasAnyNotes = domainNotes.length > 0;
 
   useEffect(() => {
+    if (queryNormalized) return;
+    if (filtersActive && filtered[0] && activeNoteId !== filtered[0].id) {
+      setActiveChapterId(filtered[0].chapterId);
+      setActiveNoteId(filtered[0].id);
+      return;
+    }
     if (activeNote) return;
     setActiveNoteId(filtered[0]?.id ?? null);
-  }, [filtered, activeNote]);
+  }, [filtered, activeNote, filtersActive, activeNoteId, queryNormalized]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -362,10 +534,29 @@ export default function NotesClient({
     );
   }, [activeNoteId, activeDomain, domainNotes]);
 
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      const container = searchContainerRef.current;
+      if (container && container.contains(target)) return;
+      setIsResultsOpen(false);
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsResultsOpen(false);
+    };
+    window.addEventListener("click", handleClick);
+    window.addEventListener("keydown", handleKey);
+    return () => {
+      window.removeEventListener("click", handleClick);
+      window.removeEventListener("keydown", handleKey);
+    };
+  }, []);
+
   const isDark = theme === "dark";
   const bgClass = isDark
     ? "bg-slate-950 text-slate-100"
-    : "bg-slate-50 text-slate-900";
+    : "bg-slate-100 text-slate-900";
   const inputClass = isDark
     ? "border-slate-800 bg-slate-900 text-slate-100 placeholder:text-slate-500 focus:border-sky-500 focus:ring focus:ring-sky-500/20"
     : "border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus:border-sky-500 focus:ring focus:ring-sky-500/20";
@@ -380,6 +571,14 @@ export default function NotesClient({
 
   const headingSm = `${textPrimary} text-sm font-semibold tracking-[0.08em] uppercase`;
   const bodyBase = `${textBody} text-sm leading-[1.75]`;
+
+  const chapterActiveClass = isDark
+    ? "bg-sky-500/15 text-sky-100 ring-1 ring-sky-500/40 shadow-sm shadow-sky-500/20 border border-sky-500/40"
+    : "bg-sky-500/10 text-sky-950 ring-1 ring-sky-500/30 border border-sky-500/30";
+
+  const itemActiveClass = isDark
+    ? "bg-sky-500/15 text-sky-100 ring-1 ring-sky-500/30 border border-sky-500/30 shadow-sky-500/15"
+    : "bg-sky-500/10 text-sky-950 ring-1 ring-sky-500/25 border border-sky-500/25";
 
   const chip =
     "inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] transition duration-150 ease-out";
@@ -618,17 +817,33 @@ export default function NotesClient({
     };
   }, [filtered, activeNoteId]);
 
-  const sidebarGroups = useMemo(() => {
-    const availableIds = new Set(filtered.map((note) => note.id));
-    return outline
-      .filter((g) => g.domain === activeDomain)
-      .map((g) => ({
-        id: g.id,
-        label: g.label,
-        items: g.items.filter((it) => availableIds.has(it.id)),
-      }))
-      .filter((g) => g.items.length > 0);
-  }, [outline, activeDomain, filtered]);
+  const filteredIds = useMemo(
+    () => new Set(filtered.map((note) => note.id)),
+    [filtered]
+  );
+
+  const sidebarGroups = useMemo(
+    () => outline.filter((g) => g.domain === activeDomain),
+    [outline, activeDomain]
+  );
+
+  const [collapsedChapters, setCollapsedChapters] = useState<
+    Record<string, boolean>
+  >({});
+
+  useEffect(() => {
+    setCollapsedChapters((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const group of sidebarGroups) {
+        if (next[group.id] === undefined) {
+          next[group.id] = true;
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [sidebarGroups]);
 
   const [showScrollTop, setShowScrollTop] = useState(false);
 
@@ -647,19 +862,29 @@ export default function NotesClient({
   return (
     <div className={`min-h-screen relative scroll-smooth ${bgClass}`}>
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute left-0 top-12 h-80 w-80 rounded-full bg-gradient-to-br from-sky-500/15 via-indigo-500/10 to-transparent blur-3xl opacity-60" />
-        <div className="absolute right-[-6rem] top-32 h-[28rem] w-[28rem] rounded-full bg-gradient-to-tr from-indigo-500/12 via-fuchsia-500/8 to-transparent blur-3xl opacity-60" />
-        <div className="absolute left-1/2 top-64 h-72 w-72 -translate-x-1/2 rounded-full bg-gradient-to-b from-slate-100/10 via-slate-400/5 to-transparent blur-3xl opacity-50" />
+        {isDark ? (
+          <>
+            <div className="absolute left-0 top-12 h-80 w-80 rounded-full bg-gradient-to-br from-slate-900/40 via-slate-900/20 to-transparent blur-3xl opacity-40" />
+            <div className="absolute right-[-6rem] top-32 h-[28rem] w-[28rem] rounded-full bg-gradient-to-tr from-slate-900/30 via-slate-900/15 to-transparent blur-3xl opacity-35" />
+            <div className="absolute left-1/2 top-64 h-72 w-72 -translate-x-1/2 rounded-full bg-gradient-to-b from-slate-900/25 via-slate-900/15 to-transparent blur-3xl opacity-30" />
+          </>
+        ) : (
+          <>
+            <div className="absolute left-0 top-12 h-80 w-80 rounded-full bg-gradient-to-br from-slate-200/40 via-slate-200/30 to-transparent blur-3xl opacity-50" />
+            <div className="absolute right-[-6rem] top-32 h-[28rem] w-[28rem] rounded-full bg-gradient-to-tr from-slate-200/35 via-slate-200/25 to-transparent blur-3xl opacity-45" />
+            <div className="absolute left-1/2 top-64 h-72 w-72 -translate-x-1/2 rounded-full bg-gradient-to-b from-slate-200/30 via-slate-200/20 to-transparent blur-3xl opacity-40" />
+          </>
+        )}
       </div>
-      <div className="pointer-events-none absolute inset-0 bg-[url('/noise.png')] opacity-[0.015] mix-blend-soft-light" />
+      <div className="pointer-events-none absolute inset-0 bg-[url('/noise.png')] opacity-[0.01] mix-blend-soft-light" />
       <header
-        className={[
-          "sticky top-0 z-10 border-b backdrop-blur",
-          isDark
-            ? "border-slate-800/60 bg-slate-950/85"
-            : "border-slate-200/70 bg-white/85",
-        ].join(" ")}
-      >
+          className={[
+            "sticky top-0 z-10 border-b backdrop-blur",
+            isDark
+              ? "border-slate-800/60 bg-slate-950/85"
+              : "border-slate-200/70 bg-slate-100/95",
+          ].join(" ")}
+        >
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-6 pb-4">
           <div className="flex items-center justify-between gap-4 py-4">
             <Link href="/" aria-label="Home" className="flex items-center">
@@ -673,17 +898,102 @@ export default function NotesClient({
               />
             </Link>
             <div className="flex items-center gap-3">
-              <div className="relative w-40 sm:w-56 lg:w-64">
+              <div
+                ref={searchContainerRef}
+                className="relative w-40 sm:w-56 lg:w-64"
+              >
                 <input
                   ref={searchRef}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
+                  onFocus={() => {
+                    if (queryNormalized) setIsResultsOpen(true);
+                  }}
                   placeholder="Search notes..."
                   className={`w-full rounded-xl border px-3 py-2 text-sm outline-none ring-0 transition duration-150 ease-out ${inputClass}`}
                 />
-                <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] uppercase tracking-[0.15em] text-sky-400">
-                  /
-                </div>
+                  <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] uppercase tracking-[0.15em] text-sky-400">
+                    /
+                  </div>
+                {queryNormalized && isResultsOpen && (
+                  <div
+                    className={[
+                      "absolute left-0 right-0 top-[110%] z-30 rounded-2xl border shadow-xl",
+                      isDark
+                        ? "border-slate-800/70 bg-slate-950/95"
+                        : "border-slate-200 bg-white",
+                    ].join(" ")}
+                  >
+                    <div className="flex items-center justify-between gap-2 border-b px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                      <span>Results for “{queryNormalized}”</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          clearFilters();
+                          searchRef.current?.focus();
+                        }}
+                        className={[
+                          "rounded-full border px-2 py-1 transition duration-150 ease-out",
+                          hoverRow,
+                          borderSoft,
+                          focusRing,
+                          "text-[10px] font-semibold uppercase tracking-[0.15em]",
+                        ].join(" ")}
+                      >
+                        Clear
+                      </button>
+                    </div>
+                    {contentSearchPending || isSearchingContent ? (
+                      <p className="px-3 py-3 text-xs text-slate-400">
+                        Searching notes...
+                      </p>
+                    ) : null}
+                    <div className="max-h-[360px] space-y-2 overflow-y-auto p-2">
+                      {searchResults.length > 0 ? (
+                        searchResults.slice(0, 10).map(({ note, snippets }) => (
+                          <button
+                            key={note.id}
+                            type="button"
+                            onClick={() => handleResultClick(note)}
+                            className={[
+                              "w-full rounded-xl border px-3 py-3 text-left transition duration-150 ease-out",
+                              hoverRow,
+                              focusRing,
+                              borderSoft,
+                            ].join(" ")}
+                          >
+                            <div className="flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-sky-400">
+                              <span>
+                                {sections.find((s) => s.id === note.section)
+                                  ?.label ?? note.section}
+                              </span>
+                              <span className="text-slate-500">•</span>
+                              <span>{note.chapterTitle}</span>
+                            </div>
+                            <div className="mt-1 text-sm font-semibold text-slate-200">
+                              {note.title}
+                            </div>
+                            <p className="mt-1 text-[11px] uppercase tracking-[0.15em] text-slate-500">
+                              {snippets.length} match{snippets.length === 1 ? "" : "es"}
+                            </p>
+                            {snippets.slice(0, 3).map((snippet, idx) => (
+                              <p
+                                key={`${note.id}-snip-${idx}`}
+                                className="mt-1 text-xs text-slate-400 leading-relaxed"
+                              >
+                                {highlightSnippetParts(snippet, searchTerms)}
+                              </p>
+                            ))}
+                          </button>
+                        ))
+                      ) : (
+                        <p className="px-3 py-2 text-xs text-slate-400">
+                          No notes match this search.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
               <button
                 onClick={() => setTheme(isDark ? "light" : "dark")}
@@ -695,6 +1005,7 @@ export default function NotesClient({
                   "shadow-sm shadow-slate-900/10 hover:brightness-105",
                   focusRing,
                 ].join(" ")}
+                aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
               >
                 <span
                   className={`flex h-6 w-6 items-center justify-center rounded-full ${
@@ -736,7 +1047,9 @@ export default function NotesClient({
                     </svg>
                   )}
                 </span>
-                {isDark ? "Light mode" : "Dark mode"}
+                <span className="hidden sm:inline">
+                  {isDark ? "Light mode" : "Dark mode"}
+                </span>
               </button>
             </div>
           </div>
@@ -874,12 +1187,15 @@ export default function NotesClient({
         </div>
       </header>
 
-      <main className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-4 px-6 py-10 lg:grid-cols-[300px_minmax(0,1fr)]">
+      <main
+        id="notes-main"
+        className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-4 px-6 py-10 lg:grid-cols-[300px_minmax(0,1fr)]"
+      >
         {/* Left tree */}
         <aside
           className={[
             "hidden lg:block",
-            hasNotes ? "" : "invisible pointer-events-none",
+            hasAnyNotes ? "" : "invisible pointer-events-none",
           ].join(" ")}
         >
           <div
@@ -890,54 +1206,89 @@ export default function NotesClient({
             ].join(" ")}
           >
             <h3 className={`${headingSm} ${textSubtle}`}>Sections</h3>
-            <div className="space-y-4 text-sm">
+            <div className="space-y-3 text-sm">
               {sidebarGroups.map((group) => {
+                const isCollapsed = collapsedChapters[group.id] ?? false;
+                const groupHasActive = group.items.some(
+                  (item) => item.id === activeNoteId
+                );
+                const panelId = `notes-chapter-${group.id}`;
+                const isActiveChapter =
+                  activeChapterId === group.id && !isCollapsed;
                 return (
                   <div key={group.id} className="space-y-2">
                     <button
+                      type="button"
+                      aria-controls={panelId}
+                      aria-expanded={!isCollapsed}
                       onClick={() => {
-                        setQuery("");
-                        setActiveTag(null);
-                        setActiveLevel("all");
-                        setActiveSection("all");
+                        const nextCollapsed = !isCollapsed;
+                        setCollapsedChapters((prev) => ({
+                          ...prev,
+                          [group.id]: nextCollapsed,
+                        }));
+
+                        if (nextCollapsed) {
+                          if (activeChapterId === group.id) {
+                            setActiveChapterId(null);
+                          }
+                          return;
+                        }
+
                         setActiveChapterId(group.id);
-                        const first = filtered.find((n) => n.chapterId === group.id);
-                        setActiveNoteId(first?.id ?? null);
+                        if (!activeNoteId || !groupHasActive) {
+                          const first = group.items[0];
+                          setActiveNoteId(first?.id ?? null);
+                        }
                       }}
                       className={[
-                        "flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition duration-150 ease-out focus:outline-none focus:ring-2 focus:ring-sky-500/60",
-                        activeChapterId === group.id
-                          ? "bg-sky-500/15 text-sky-100 ring-1 ring-sky-500/40 shadow-sm shadow-sky-500/20 border border-sky-500/40"
-                          : `${textBody} ${hoverRow}`,
+                        "flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition duration-150 ease-out",
+                        isActiveChapter ? chapterActiveClass : `${textBody} ${hoverRow}`,
+                        focusRing,
                       ].join(" ")}
                     >
                       <span className="font-semibold">{group.label}</span>
+                      <span
+                        className={`inline-flex h-8 w-8 items-center justify-center rounded-md transition-transform ${
+                          isCollapsed ? "-rotate-90" : "rotate-0"
+                        }`}
+                        aria-hidden="true"
+                      >
+                        ▼
+                      </span>
                     </button>
-                    <div
-                      className={`space-y-1.5 border-l border-dashed pl-3 text-xs ${borderDashedSoft} ${textMuted}`}
-                    >
-                      {group.items.map((item) => (
-                        <button
-                          key={item.id}
+                    {!isCollapsed && (
+                      <div
+                        id={panelId}
+                        className={`space-y-1.5 border-l border-dashed pl-3 text-xs ${borderDashedSoft} ${textMuted}`}
+                      >
+                        {group.items.map((item) => {
+                          const isActive = activeNoteId === item.id;
+                          const matchesFilter = filteredIds.has(item.id);
+                          const dimClass =
+                            queryNormalized || matchesFilter ? "" : "opacity-60";
+                          return (
+                            <button
+                              key={item.id}
                           onClick={() => {
-                            setQuery("");
-                            setActiveTag(null);
-                            setActiveLevel("all");
-                            setActiveSection("all");
+                            clearFilters();
                             setActiveChapterId(group.id);
                             setActiveNoteId(item.id);
                           }}
-                          className={[
-                            "flex w-full items-center justify-between rounded-md px-2.5 py-1.5 transition duration-150 ease-out focus:outline-none focus:ring-2 focus:ring-sky-500/60",
-                            activeNoteId === item.id
-                              ? "bg-sky-500/15 text-sky-100 ring-1 ring-sky-500/30 border border-sky-500/30 shadow-sky-500/15"
-                              : hoverRow,
-                          ].join(" ")}
-                        >
-                          <span className="truncate">{item.label}</span>
-                        </button>
-                      ))}
-                    </div>
+		                              className={[
+		                                "flex w-full items-center justify-between rounded-md px-2.5 py-1.5 transition duration-150 ease-out focus:outline-none focus:ring-2 focus:ring-sky-500/60",
+		                                isActive
+		                                  ? itemActiveClass
+		                                  : hoverRow,
+		                                dimClass,
+		                              ].join(" ")}
+	                            >
+                              <span className="truncate">{item.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -963,8 +1314,8 @@ export default function NotesClient({
               Browse sections
             </button>
           </div>
-          {activeNote ? (
-            <article
+	          {activeNote ? (
+	            <article
               className={[
                 "mx-auto max-w-[920px] rounded-2xl border p-7 shadow-xl",
                 surfaceElevated,
@@ -972,20 +1323,37 @@ export default function NotesClient({
               ].join(" ")}
               style={mdxVars}
 	            >
-	              <div className={`${bodyBase} text-[15px]`}>{children}</div>
-	            </article>
-	          ) : (
-            <div
-              className={`mx-auto max-w-[920px] rounded-xl border border-dashed p-8 text-center ${borderSoft} ${textMuted}`}
-            >
-              Notes coming soon.
+		              <div className={`${bodyBase} text-[15px]`}>{children}</div>
+		            </article>
+		          ) : hasAnyNotes && filtersActive ? (
+                <div
+                  className={`mx-auto max-w-[920px] rounded-xl border border-dashed p-8 text-center ${borderSoft} ${textMuted}`}
+                >
+                  <p>
+                    {contentSearchPending || isSearchingContent
+                      ? "Searching notes..."
+                      : "No notes match your search."}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className={`mt-3 inline-flex items-center rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.15em] ${borderSoft} ${hoverRow} ${focusRing}`}
+                  >
+                    Clear filters
+                  </button>
+                </div>
+              ) : (
+	            <div
+	              className={`mx-auto max-w-[920px] rounded-xl border border-dashed p-8 text-center ${borderSoft} ${textMuted}`}
+	            >
+	              Notes coming soon.
             </div>
           )}
         </section>
 
       </main>
 
-      {sectionsOpen && (
+	      {sectionsOpen && (
         <div className="fixed inset-0 z-30 flex items-end justify-center bg-black/40 px-4 pb-4 pt-10 sm:items-center backdrop-blur-[2px] transition duration-200 ease-out">
           <div
             className={[
@@ -1003,60 +1371,90 @@ export default function NotesClient({
               >
                 Close
               </button>
-            </div>
-            <div className="max-h-[60vh] space-y-3 overflow-y-auto text-sm">
-              {sidebarGroups.map((group) => {
-                return (
-                  <div key={group.id} className="space-y-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setQuery("");
-                        setActiveTag(null);
-                        setActiveLevel("all");
-                        setActiveSection("all");
-                        setActiveChapterId(group.id);
-                        const first = filtered.find((n) => n.chapterId === group.id);
-                        setActiveNoteId(first?.id ?? null);
-                        setSectionsOpen(false);
-                      }}
-                      className={[
-                        "flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm font-medium transition duration-150 ease-out focus:outline-none focus:ring-2 focus:ring-sky-500/60",
-                        activeChapterId === group.id
-                          ? "bg-sky-500/20 text-sky-100 ring-1 ring-sky-500/40 border border-sky-500/40 shadow-sm shadow-sky-500/25"
-                          : `${hoverRow} ${textBody}`,
-                      ].join(" ")}
-                    >
-                      <span>{group.label}</span>
-                    </button>
-                    {group.items.length > 0 && (
+	            </div>
+	            <div className="max-h-[60vh] space-y-3 overflow-y-auto text-sm">
+	              {sidebarGroups.map((group) => {
+	                const isCollapsed = collapsedChapters[group.id] ?? false;
+	                const groupHasActive = group.items.some(
+	                  (item) => item.id === activeNoteId
+	                );
+	                const panelId = `notes-modal-chapter-${group.id}`;
+	                const isActiveChapter = activeChapterId === group.id && !isCollapsed;
+	                return (
+	                  <div key={group.id} className="space-y-2">
+	                    <button
+	                      type="button"
+	                      aria-controls={panelId}
+	                      aria-expanded={!isCollapsed}
+	                      onClick={() => {
+	                        const nextCollapsed = !isCollapsed;
+	                        setCollapsedChapters((prev) => ({
+	                          ...prev,
+	                          [group.id]: nextCollapsed,
+	                        }));
+
+	                        if (nextCollapsed) {
+	                          if (activeChapterId === group.id) {
+	                            setActiveChapterId(null);
+	                          }
+	                          return;
+	                        }
+
+	                        setActiveChapterId(group.id);
+	                        if (!activeNoteId || !groupHasActive) {
+	                          const first = group.items[0];
+	                          setActiveNoteId(first?.id ?? null);
+	                        }
+	                      }}
+	                      className={[
+	                        "flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-left transition duration-150 ease-out",
+	                        isActiveChapter ? chapterActiveClass : `${hoverRow} ${textBody}`,
+	                        focusRing,
+	                      ].join(" ")}
+	                    >
+	                      <span>{group.label}</span>
+	                      <span
+	                        className={`inline-flex h-8 w-8 items-center justify-center rounded-md transition-transform ${
+	                          isCollapsed ? "-rotate-90" : "rotate-0"
+	                        }`}
+	                        aria-hidden="true"
+	                      >
+	                        ▼
+	                      </span>
+	                    </button>
+                    {!isCollapsed && group.items.length > 0 && (
                       <div
+                        id={panelId}
                         className={`space-y-1 border-l border-dashed pl-3 text-xs ${borderDashedSoft} ${textMuted}`}
                       >
-                        {group.items.map((item) => (
-                          <button
-                            key={item.id}
-                            type="button"
-                            onClick={() => {
-                              setQuery("");
-                              setActiveTag(null);
-                              setActiveLevel("all");
-                              setActiveSection("all");
-                              setActiveChapterId(group.id);
-                              setActiveNoteId(item.id);
-                              setSectionsOpen(false);
-                            }}
-                            className={[
-                              "flex w-full items-center justify-between rounded-md px-2 py-1 text-left transition duration-150 ease-out",
-                              activeNoteId === item.id
-                                ? "bg-sky-500/20 text-sky-100 ring-1 ring-sky-500/30 border border-sky-500/30 shadow-sky-500/20"
-                                : hoverRow,
-                              focusRing,
-                            ].join(" ")}
-                          >
-                            <span className="truncate">{item.label}</span>
-                          </button>
-                        ))}
+	                        {group.items.map((item) => {
+	                          const isActive = activeNoteId === item.id;
+	                          const matchesFilter = filteredIds.has(item.id);
+	                          const dimClass =
+	                            queryNormalized || matchesFilter ? "" : "opacity-60";
+	                          return (
+	                            <button
+	                              key={item.id}
+	                              type="button"
+	                              onClick={() => {
+	                                clearFilters();
+	                                setActiveChapterId(group.id);
+	                                setActiveNoteId(item.id);
+	                                setSectionsOpen(false);
+	                              }}
+                              className={[
+	                                "flex w-full items-center justify-between rounded-md px-2 py-1 text-left transition duration-150 ease-out",
+	                                isActive
+	                                  ? itemActiveClass
+	                                  : hoverRow,
+	                                focusRing,
+	                                dimClass,
+	                              ].join(" ")}
+	                            >
+                              <span className="truncate">{item.label}</span>
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
                   </div>

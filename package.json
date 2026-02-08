@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "notes:generate": "tsc -p tsconfig.notes-gen.json && node dist-notes-gen/scripts/generate-notes.js",
-    "dev": "npm run notes:generate && next dev -p 33333",
+    "notes:watch": "node scripts/notes-watch.mjs",
+    "dev": "node scripts/dev.mjs",
     "build": "npm run notes:generate && next build",
     "pages:build": "npm run notes:generate && next build && next-on-pages",
     "start": "next start",

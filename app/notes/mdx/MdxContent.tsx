@@ -13,6 +13,123 @@ import { unified } from "unified";
 const cx = (...parts: Array<string | undefined | null | false>) =>
   parts.filter(Boolean).join(" ");
 
+type HighlightTokenType = "comment" | "string" | "keyword" | "number";
+
+const highlightJava = (code: string): ReactElement | Array<string | ReactElement> => {
+  const keywords = [
+    "abstract",
+    "assert",
+    "boolean",
+    "break",
+    "byte",
+    "case",
+    "catch",
+    "char",
+    "class",
+    "const",
+    "continue",
+    "default",
+    "do",
+    "double",
+    "else",
+    "enum",
+    "extends",
+    "final",
+    "finally",
+    "float",
+    "for",
+    "goto",
+    "if",
+    "implements",
+    "import",
+    "instanceof",
+    "int",
+    "interface",
+    "long",
+    "native",
+    "new",
+    "package",
+    "private",
+    "protected",
+    "public",
+    "return",
+    "short",
+    "static",
+    "strictfp",
+    "super",
+    "switch",
+    "synchronized",
+    "this",
+    "throw",
+    "throws",
+    "transient",
+    "try",
+    "void",
+    "volatile",
+    "while",
+  ] as const;
+
+  const keywordAlternation = keywords.join("|");
+  const tokenRe = new RegExp(
+    [
+      "(\\/\\*[\\s\\S]*?\\*\\/)", // block comment
+      "(\\/\\/[^\\n]*)", // line comment
+      '("(?:\\\\.|[^"\\\\])*")', // string
+      "('(?:\\\\.|[^'\\\\])*')", // char
+      `\\b(${keywordAlternation})\\b`, // keyword
+      "\\b(\\d+(?:\\.\\d+)?)\\b", // number
+    ].join("|"),
+    "g"
+  );
+
+  const classForType: Record<HighlightTokenType, string> = {
+    comment: "text-slate-400 italic",
+    string: "text-amber-300",
+    keyword: "text-sky-300 font-semibold",
+    number: "text-fuchsia-300",
+  };
+
+  const nodes: Array<string | ReactElement> = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = tokenRe.exec(code)) !== null) {
+    if (match.index > lastIndex) {
+      nodes.push(code.slice(lastIndex, match.index));
+    }
+
+    const raw = match[0];
+    const type: HighlightTokenType =
+      raw.startsWith("/*") || raw.startsWith("//")
+        ? "comment"
+        : raw.startsWith('"') || raw.startsWith("'")
+          ? "string"
+          : keywords.includes(raw as (typeof keywords)[number])
+            ? "keyword"
+            : "number";
+
+    nodes.push(
+      <span key={`${match.index}-${raw.length}`} className={classForType[type]}>
+        {raw}
+      </span>
+    );
+
+    lastIndex = match.index + raw.length;
+  }
+
+  if (lastIndex < code.length) nodes.push(code.slice(lastIndex));
+  return nodes;
+};
+
+const highlightCode = (
+  code: string,
+  language: string | null
+): ReactElement | Array<string | ReactElement> => {
+  if (!language) return code;
+  if (language === "java") return highlightJava(code);
+  return code;
+};
+
 const Anchor = ({
   href,
   className,
@@ -53,9 +170,12 @@ const Code = ({ className, children, ...props }: ComponentProps<"code">) => {
       : "";
   const isBlock = !!className || text.includes("\n");
   if (isBlock) {
+    const language =
+      className?.match(/language-([a-z0-9-]+)/i)?.[1]?.toLowerCase() ?? null;
+    const highlighted = typeof text === "string" ? highlightCode(text, language) : children;
     return (
       <code className={cx("font-mono", className)} {...props}>
-        {children}
+        {highlighted}
       </code>
     );
   }
@@ -97,7 +217,7 @@ const components = {
     />
   ),
   p: ({ className, ...props }: ComponentProps<"p">) => (
-    <p className={cx("whitespace-pre-wrap", className)} {...props} />
+    <p className={cx("whitespace-normal", className)} {...props} />
   ),
   ul: ({ className, ...props }: ComponentProps<"ul">) => (
     <ul
@@ -112,7 +232,7 @@ const components = {
     />
   ),
   li: ({ className, ...props }: ComponentProps<"li">) => (
-    <li className={cx("whitespace-pre-wrap", className)} {...props} />
+    <li className={cx("whitespace-normal", className)} {...props} />
   ),
   blockquote: ({ className, ...props }: ComponentProps<"blockquote">) => (
     <blockquote
