@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import AnalyticsTracker from "./components/AnalyticsTracker";
 
 export const metadata: Metadata = {
   title: "Syakir | Portfolio",
@@ -79,7 +80,10 @@ export default function RootLayout({
           referrerPolicy="no-referrer"
         />
       </head>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <AnalyticsTracker />
+        {children}
+      </body>
     </html>
   );
 }
