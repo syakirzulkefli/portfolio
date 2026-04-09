@@ -1,4 +1,0 @@
-# Formatting Numbers
-
-Coming soon.
-

@@ -1,54 +1,112 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
+
+const NAV_ITEMS = [
+  { href: "#work", label: "Work" },
+  { href: "#experience", label: "Experience" },
+  { href: "#gallery", label: "Gallery" },
+  { href: "#contact", label: "Contact" },
+  { href: "/notes", label: "Notes" },
+];
 
 export default function Navigation() {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const [scrollY, setScrollY] = useState(0);
   const [activeSection, setActiveSection] = useState<string | null>(null);
+  const lockedSectionRef = useRef<string | null>(null);
+  const lockTimeoutRef = useRef<number | null>(null);
 
-  const navItems = [
-    { href: "#work", label: "Work" },
-    { href: "#experience", label: "Experience" },
-    { href: "#gallery", label: "Gallery" },
-    { href: "#contact", label: "Contact" },
-    { href: "/notes", label: "Notes" },
-  ];
+  const lockSection = (id: string) => {
+    lockedSectionRef.current = id;
+    setActiveSection(id);
+
+    if (lockTimeoutRef.current !== null) {
+      window.clearTimeout(lockTimeoutRef.current);
+    }
+
+    lockTimeoutRef.current = window.setTimeout(() => {
+      lockedSectionRef.current = null;
+      lockTimeoutRef.current = null;
+    }, 1200);
+  };
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY);
-    };
+    const ids = NAV_ITEMS
+      .filter((item) => item.href.startsWith("#"))
+      .map((item) => item.href.slice(1));
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  useEffect(() => {
-    const ids = ["work", "experience", "about", "contact"];
     const update = () => {
-      const center = window.innerHeight / 2;
-      let bestId: string | null = null;
-      let bestDist = Infinity;
-      for (const id of ids) {
-        const el = document.getElementById(id);
-        if (!el) continue;
-        const rect = el.getBoundingClientRect();
-        const elCenter = rect.top + rect.height / 2;
-        const dist = Math.abs(elCenter - center);
-        if (dist < bestDist) {
-          bestDist = dist;
-          bestId = id;
+      const nav = document.querySelector("nav");
+      const navHeight = nav instanceof HTMLElement ? nav.offsetHeight : 96;
+      const viewportHeight = window.innerHeight;
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight;
+      const thresholdY = scrollTop + navHeight + 16;
+      const sectionPositions = ids
+        .map((id) => {
+          const el = document.getElementById(id);
+          if (!el) return null;
+          return {
+            id,
+            top: el.getBoundingClientRect().top + scrollTop,
+          };
+        })
+        .filter((section): section is { id: string; top: number } =>
+          Boolean(section)
+        );
+
+      if (sectionPositions.length === 0) {
+        setActiveSection(null);
+        return;
+      }
+
+      // Keep clicked section highlighted during smooth scroll.
+      const lockedId = lockedSectionRef.current;
+      if (lockedId) {
+        const target = document.getElementById(lockedId);
+        if (target) {
+          const targetTop = target.getBoundingClientRect().top;
+          const arrivedByTop = Math.abs(targetTop - (navHeight + 16)) <= 12;
+          const arrivedAtBottom =
+            scrollTop + viewportHeight >= docHeight - 2 &&
+            lockedId === sectionPositions[sectionPositions.length - 1].id;
+
+          if (!arrivedByTop && !arrivedAtBottom) {
+            setActiveSection(lockedId);
+            return;
+          }
+        }
+        lockedSectionRef.current = null;
+      }
+
+      // Above the first tracked section (hero area): no active nav item.
+      if (thresholdY < sectionPositions[0].top) {
+        setActiveSection(null);
+        return;
+      }
+
+      // If user is at the bottom, always activate the last section.
+      if (scrollTop + viewportHeight >= docHeight - 2) {
+        setActiveSection(sectionPositions[sectionPositions.length - 1].id);
+        return;
+      }
+
+      let currentSection = sectionPositions[0].id;
+      for (const section of sectionPositions) {
+        if (thresholdY >= section.top) {
+          currentSection = section.id;
+        } else {
+          break;
         }
       }
-      if (bestDist < window.innerHeight * 0.35) {
-        setActiveSection(bestId);
-      } else {
-        setActiveSection(null);
-      }
+
+      setActiveSection(currentSection);
     };
+
     const onScroll = () => requestAnimationFrame(update);
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
@@ -56,6 +114,14 @@ export default function Navigation() {
     return () => {
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
+    };
+  }, [pathname]);
+
+  useEffect(() => {
+    return () => {
+      if (lockTimeoutRef.current !== null) {
+        window.clearTimeout(lockTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -72,13 +138,7 @@ export default function Navigation() {
 
   return (
     <>
-      <nav
-        className="fixed top-0 left-0 right-0 z-[100] transition-all duration-300"
-        style={{
-          background: scrollY > 50 ? "rgba(0, 0, 0, 0.05)" : "transparent",
-          backdropFilter: scrollY > 50 ? "blur(20px)" : "none",
-        }}
-      >
+      <nav className="fixed top-0 left-0 right-0 z-[100]">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" aria-label="Home" className="flex items-center">
             <Image
@@ -87,7 +147,8 @@ export default function Navigation() {
               width={1200}
               height={300}
               priority
-              className="h-20 md:h-24 w-auto shrink-0 drop-shadow-[0_0_8px_rgba(0,0,0,0.5)]"
+              className="h-20 md:h-24 w-auto shrink-0"
+              style={{ filter: "brightness(0) invert(1)" }}
             />
           </Link>
 
@@ -95,18 +156,31 @@ export default function Navigation() {
             <div
               className="flex items-center px-4 py-2 rounded-full"
               style={{
-                background: "rgba(0, 0, 0, 0.8)",
+                background: "#000000",
               }}
             >
-              {navItems.map((item) => {
-                const id = item.href.replace("#", "");
-                const isActive = activeSection === id;
+              {NAV_ITEMS.map((item) => {
+                const id = item.href.startsWith("#") ? item.href.slice(1) : null;
+                const itemKey =
+                  id ?? (item.href === "/notes" ? "notes" : null);
+                const isActive = itemKey
+                  ? itemKey === "notes"
+                    ? pathname.startsWith("/notes") || activeSection === "notes"
+                    : activeSection === itemKey
+                  : false;
                 return (
                   <a
                     key={item.href}
                     href={item.href}
                     aria-current={isActive ? "page" : undefined}
                     className={itemClass(isActive)}
+                    onClick={() => {
+                      if (id) {
+                        lockSection(id);
+                      } else if (item.href === "/notes") {
+                        setActiveSection("notes");
+                      }
+                    }}
                   >
                     {item.label}
                   </a>
@@ -145,12 +219,14 @@ export default function Navigation() {
             </a>
 
             <button
-              onClick={() =>
-                document
-                  .getElementById("contact")
-                  ?.scrollIntoView({ behavior: "smooth" })
-              }
-              className="bg-gradient-to-r from-blue-500 to-purple-600 text-white text-sm font-medium px-6 py-2 rounded-full hover:from-blue-600 hover:to-purple-700 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-blue-500/25"
+              onClick={() => {
+                lockSection("contact");
+                document.getElementById("contact")?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "start",
+                });
+              }}
+              className="cta-primary text-sm font-medium px-6 py-2 rounded-full"
             >
               Get In Touch
             </button>
@@ -195,9 +271,14 @@ export default function Navigation() {
         }}
       >
         <div className="flex flex-col items-center justify-center h-full space-y-8">
-          {navItems.map((item) => {
-            const id = item.href.replace("#", "");
-            const isActive = activeSection === id;
+          {NAV_ITEMS.map((item) => {
+            const id = item.href.startsWith("#") ? item.href.slice(1) : null;
+            const itemKey = id ?? (item.href === "/notes" ? "notes" : null);
+            const isActive = itemKey
+              ? itemKey === "notes"
+                ? pathname.startsWith("/notes") || activeSection === "notes"
+                : activeSection === itemKey
+              : false;
             return (
               <a
                 key={item.href}
@@ -206,7 +287,14 @@ export default function Navigation() {
                   "text-2xl font-medium transition-colors",
                   isActive ? "text-white" : "text-white/80 hover:text-white",
                 ].join(" ")}
-                onClick={() => setIsOpen(false)}
+                onClick={() => {
+                  if (id) {
+                    lockSection(id);
+                  } else if (item.href === "/notes") {
+                    setActiveSection("notes");
+                  }
+                  setIsOpen(false);
+                }}
                 aria-current={isActive ? "page" : undefined}
               >
                 {item.label}

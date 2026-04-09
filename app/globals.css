@@ -14,14 +14,9 @@
 html {
   scroll-behavior: smooth;
   background: #2d3748;
-  overscroll-behavior-y: auto;
+  overscroll-behavior-y: none;
   overflow-x: hidden;
-  overflow-y: auto;
 }
-:target {
-  scroll-margin-top: 90px;
-}
-
 body {
   background: #2d3748;
   color: var(--foreground);
@@ -32,18 +27,13 @@ body {
   position: relative;
   line-height: 1.6;
   font-weight: 400;
-  overscroll-behavior-y: auto;
   overflow-x: hidden;
-  overflow-y: auto;
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #5a67d8, #667eea, #5a67d8, #8b5dff);
-  background-size: 200% 200%;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: gradientShift 8s ease-in-out infinite;
+  color: #667eea;
+  -webkit-text-fill-color: currentColor;
+  text-shadow: none;
 }
 
 @keyframes gradientShift {
@@ -72,28 +62,7 @@ body {
 }
 
 .card-blur::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(90, 103, 216, 0.15),
-    transparent
-  );
-  animation: shimmer 3s infinite;
-}
-
-@keyframes shimmer {
-  0% {
-    left: -100%;
-  }
-  100% {
-    left: 100%;
-  }
+  content: none;
 }
 
 .glow-effect {
@@ -198,7 +167,7 @@ body {
 }
 
 .text-shadow {
-  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  text-shadow: none;
 }
 
 @keyframes floatParticle {
@@ -219,15 +188,13 @@ body {
 
 .holographic {
   background: linear-gradient(
-    45deg,
-    #ff006e,
-    #fb5607,
-    #ffbe0b,
-    #8338ec,
-    #3a86ff
+    135deg,
+    rgba(88, 101, 242, 0.2) 0%,
+    rgba(124, 92, 255, 0.12) 45%,
+    rgba(56, 189, 248, 0.12) 100%
   );
-  background-size: 400% 400%;
-  animation: holographicShift 4s ease-in-out infinite;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 @keyframes holographicShift {
@@ -247,9 +214,48 @@ body {
 }
 
 .neon-border {
-  border: 2px solid transparent;
-  background: linear-gradient(45deg, #ff006e, #8338ec, #3a86ff) border-box;
-  animation: neonPulse 2s ease-in-out infinite alternate;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: linear-gradient(135deg, #5865f2 0%, #7c5cff 100%);
+  box-shadow: 0 12px 28px rgba(92, 79, 240, 0.38);
+}
+
+.cta-primary {
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: linear-gradient(135deg, #5865f2 0%, #7c5cff 100%);
+  box-shadow: 0 12px 28px rgba(92, 79, 240, 0.38);
+  transition: transform 300ms ease, filter 300ms ease, box-shadow 300ms ease;
+}
+
+.cta-primary:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+  box-shadow: 0 16px 32px rgba(92, 79, 240, 0.46);
+}
+
+.cta-primary:focus-visible {
+  outline: 2px solid rgba(165, 180, 252, 0.85);
+  outline-offset: 2px;
+}
+
+.cta-secondary {
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(8px);
+  transition: transform 300ms ease, background-color 300ms ease,
+    border-color 300ms ease;
+}
+
+.cta-secondary:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(199, 210, 254, 0.6);
+}
+
+.cta-secondary:focus-visible {
+  outline: 2px solid rgba(165, 180, 252, 0.85);
+  outline-offset: 2px;
 }
 
 @keyframes neonPulse {
@@ -401,28 +407,7 @@ body {
 }
 
 .prisma-timeline-icon::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(113, 232, 223, 0.3),
-    transparent
-  );
-  animation: iconShimmer 3s infinite;
-}
-
-@keyframes iconShimmer {
-  0% {
-    left: -100%;
-  }
-  100% {
-    left: 100%;
-  }
+  content: none;
 }
 
 .prisma-timeline-icon span {
@@ -444,11 +429,14 @@ body {
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.prisma-content-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), 0 0 40px rgba(113, 232, 223, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  border-color: rgba(113, 232, 223, 0.4);
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 .prisma-job-card {
@@ -458,12 +446,6 @@ body {
   padding: 32px;
   position: relative;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.prisma-job-card:hover {
-  background: rgba(26, 31, 46, 0.3);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(113, 232, 223, 0.1);
 }
 
 .timeline-cards {

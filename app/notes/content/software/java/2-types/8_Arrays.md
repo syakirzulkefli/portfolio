@@ -1,4 +1,0 @@
-# Arrays
-
-Coming soon.
-

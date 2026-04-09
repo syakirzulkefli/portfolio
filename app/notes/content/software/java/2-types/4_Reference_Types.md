@@ -1,4 +1,0 @@
-# Reference Types
-
-Coming soon.
-

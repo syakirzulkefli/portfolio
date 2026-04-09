@@ -4,6 +4,14 @@ import AnalyticsTracker from "./components/AnalyticsTracker";
 
 export const metadata: Metadata = {
   title: "Syakir | Portfolio",
+  icons: {
+    icon: [
+      { url: "/favicon.ico?v=6", type: "image/x-icon" },
+      { url: "/favicon-white.png?v=6", type: "image/png", sizes: "256x256" },
+    ],
+    shortcut: "/favicon.ico?v=6",
+    apple: "/favicon-white.png?v=6",
+  },
   description:
     "Senior Full-Stack Engineer with expertise in React, Node.js, TypeScript, and AWS. Specialized in scalable web applications and system architecture. Available for senior engineering roles.",
   keywords: [
@@ -72,6 +80,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <link rel="icon" href="/favicon.ico?v=6" type="image/x-icon" />
+        <link rel="shortcut icon" href="/favicon.ico?v=6" type="image/x-icon" />
         <link
           rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"

@@ -10,6 +10,28 @@ type TrackPayload = {
   timezone?: string;
 };
 
+const normalizeEnvValue = (value: string | undefined) => {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (
+    (trimmed.startsWith("\"") && trimmed.endsWith("\"")) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    const unwrapped = trimmed.slice(1, -1).trim();
+    return unwrapped || null;
+  }
+  return trimmed;
+};
+
+const firstEnvValue = (...keys: string[]) => {
+  for (const key of keys) {
+    const value = normalizeEnvValue(process.env[key]);
+    if (value) return value;
+  }
+  return null;
+};
+
 const getClientIp = (request: Request) => {
   const cfIp = request.headers.get("cf-connecting-ip");
   if (cfIp) return cfIp;
@@ -32,8 +54,11 @@ const normalizePath = (path: string | undefined) => {
 };
 
 export async function POST(request: Request) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = firstEnvValue(
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "SUPABASE_URL"
+  );
+  const serviceRoleKey = firstEnvValue("SUPABASE_SERVICE_ROLE_KEY");
 
   if (!supabaseUrl || !serviceRoleKey) {
     return NextResponse.json({ ok: true, skipped: "missing_env" }, { status: 202 });
@@ -93,4 +118,3 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ ok: true });
 }
-

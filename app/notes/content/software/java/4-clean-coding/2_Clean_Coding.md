@@ -1,4 +1,0 @@
-# Clean Coding
-
-Coming soon.
-

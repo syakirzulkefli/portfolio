@@ -1,4 +1,0 @@
-# Strings
-
-Coming soon.
-

@@ -1,9 +1,59 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
-import { noteSourceById } from "../../../notes/generated/notes.generated";
-import { notesOutline } from "../../../notes/outline";
+import { getNotesSnapshot } from "../../../notes/store";
+import { getAdminSession } from "../../../notes/admin/supabase.server";
 
 export const runtime = "edge";
+
+const normalizeEnvValue = (value: string | undefined) => {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (
+    (trimmed.startsWith("\"") && trimmed.endsWith("\"")) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    const unwrapped = trimmed.slice(1, -1).trim();
+    return unwrapped || null;
+  }
+  return trimmed;
+};
+
+const firstEnvValue = (...keys: string[]) => {
+  for (const key of keys) {
+    const value = normalizeEnvValue(process.env[key]);
+    if (value) return value;
+  }
+  return null;
+};
+
+const isAuthenticated = async () => {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("sb-access-token")?.value;
+  const supabaseUrl = firstEnvValue(
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "SUPABASE_URL"
+  );
+  const anonKey = firstEnvValue(
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "SUPABASE_ANON_KEY"
+  );
+  if (!token || !supabaseUrl || !anonKey) return false;
+
+  try {
+    const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      headers: {
+        apikey: anonKey,
+        authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+};
 
 const normalizeForSearch = (input: string) =>
   input
@@ -12,18 +62,6 @@ const normalizeForSearch = (input: string) =>
     .replace(/[^a-z0-9]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
-
-const noteIdsByDomain = (() => {
-  const software: string[] = [];
-  const trading: string[] = [];
-  for (const group of notesOutline) {
-    for (const item of group.items) {
-      if (item.domain === "trading") trading.push(item.id);
-      else software.push(item.id);
-    }
-  }
-  return { software, trading } as const;
-})();
 
 const snippetFor = (source: string, hitIndex: number) => {
   const start = Math.max(0, hitIndex - 60);
@@ -35,6 +73,17 @@ const snippetFor = (source: string, hitIndex: number) => {
 };
 
 export async function GET(request: Request) {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("sb-access-token")?.value ?? null;
+  const adminSession = await getAdminSession();
+  const isAdmin = adminSession.ok;
+  const authed =
+    adminSession.ok || adminSession.reason === "forbidden"
+      ? true
+      : await isAuthenticated();
+  const snapshot = await getNotesSnapshot({
+    accessToken: authed ? token : null,
+  });
   const { searchParams } = new URL(request.url);
   const q = searchParams.get("q") ?? "";
   const domainParam = searchParams.get("domain");
@@ -45,17 +94,23 @@ export async function GET(request: Request) {
   }
 
   const domain =
-    domainParam === "software" || domainParam === "trading"
+    domainParam === "software" ||
+    domainParam === "trading" ||
+    domainParam === "motivation"
       ? domainParam
       : null;
 
-  const candidates = domain
-    ? noteIdsByDomain[domain]
-    : Object.keys(noteSourceById);
+  const candidates = snapshot.notes
+    .filter((note) => {
+      if (!isAdmin && note.domain === "trading") return false;
+      if (domain && note.domain !== domain) return false;
+      return true;
+    })
+    .map((note) => note.id);
 
   const results: { id: string; snippets: string[]; matchesCount: number }[] = [];
   for (const id of candidates) {
-    const src = noteSourceById[id as keyof typeof noteSourceById];
+    const src = snapshot.sourceById[id];
     if (!src) continue;
     const haystack = src.toLowerCase();
     if (normalizedTerms.every((term) => haystack.includes(term))) {

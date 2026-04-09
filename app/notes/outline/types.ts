@@ -13,6 +13,7 @@ export type NotesOutlineItem = {
   tags: string[];
   markdownPath: string;
   pinned?: boolean;
+  isPublished?: boolean;
 };
 
 export type NotesOutlineGroup = {
@@ -21,4 +22,3 @@ export type NotesOutlineGroup = {
   domain: DomainId;
   items: NotesOutlineItem[];
 };
-

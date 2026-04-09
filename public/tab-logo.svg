@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>Syakir Tab Icon</title>
+  <!--
+    Size control:
+    - Increase width/height to make logo appear bigger.
+    - Decrease x/y to keep it centered when making it bigger.
+  -->
+  <image
+    href="/syakir_brand_logo_white.svg"
+    x="7"
+    y="7"
+    width="500"
+    height="500"
+    preserveAspectRatio="xMidYMid meet"
+  />
+</svg>

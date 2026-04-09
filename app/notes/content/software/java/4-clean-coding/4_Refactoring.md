@@ -1,4 +1,0 @@
-# Refactoring
-
-Coming soon.
-

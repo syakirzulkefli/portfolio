@@ -1,4 +1,0 @@
-# Extracting Methods
-
-Coming soon.
-

@@ -1,4 +1,0 @@
-# Exercise: FizzBuzz
-
-Coming soon.
-

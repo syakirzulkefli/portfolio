@@ -1,4 +1,0 @@
-# Logical Operators
-
-Coming soon.
-

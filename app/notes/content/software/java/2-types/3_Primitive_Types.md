@@ -1,4 +1,0 @@
-# Primitive Types
-
-Coming soon.
-

@@ -5,13 +5,11 @@ import TechStackAnimation from "./components/TechStackAnimation";
 import TimelineAnimation from "../components/TimelineAnimation";
 import ScrollingGallery from "./components/ScrollingGallery";
 import ErrorBoundary from "./components/ErrorBoundary";
-import ScrollReset from "./components/ScrollReset";
 import BackToTop from "./components/BackToTop";
 
 export default function Home() {
   return (
     <div className="min-h-screen relative">
-      <ScrollReset />
       <FloatingParticles />
       <a
         href="#work"
@@ -53,7 +51,7 @@ export default function Home() {
         </div>
         <div className="max-w-6xl mx-auto text-center">
           <div className="mb-5 md:mb-6 relative z-10">
-            <h1 className="text-[clamp(2rem,8vw,6rem)] md:text-[clamp(3rem,7vw,7rem)] font-semibold mb-6 text-shadow drop-shadow-sm leading-tight tracking-tight">
+            <h1 className="text-[clamp(2rem,8vw,6rem)] md:text-[clamp(3rem,7vw,7rem)] font-semibold mb-6 leading-tight tracking-tight">
               <span className="gradient-text">Full-Stack</span> Software
               Developer
             </h1>
@@ -85,7 +83,7 @@ export default function Home() {
               href="#work"
               role="button"
               aria-label="View projects"
-              className="bg-white text-slate-900 px-8 py-4 rounded-lg font-semibold hover:bg-white/90 transition-all glow-effect hover-scale magnetic-effect focus:outline-none focus:ring-2 focus:ring-purple-400/70 shadow-sm hover:shadow-md"
+              className="cta-secondary px-8 py-4 rounded-xl font-semibold"
             >
               View Projects
             </a>
@@ -93,7 +91,7 @@ export default function Home() {
               href="#contact"
               role="button"
               aria-label="Contact me"
-              className="border border-white/20 text-white px-8 py-4 rounded-lg font-semibold hover:bg-white/5 transition-all neon-border focus:outline-none focus:ring-2 focus:ring-purple-400/70 shadow-sm hover:shadow-md"
+              className="cta-primary px-8 py-4 rounded-xl font-semibold"
             >
               Contact Me
             </a>
@@ -109,7 +107,7 @@ export default function Home() {
 
       <section
         id="work"
-        className="pt-10 md:pt-12 pb-16 md:pb-20 px-6 bg-black"
+        className="pt-32 md:pt-36 pb-16 md:pb-20 px-6 bg-black"
       >
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-semibold text-center mb-4 gradient-text leading-tight tracking-tight">
@@ -121,7 +119,7 @@ export default function Home() {
           </p>
 
           <div className="space-y-16">
-            <div className="card-blur rounded-3xl p-8 hover:glow-effect transition-all hover-scale relative overflow-hidden">
+            <div className="card-blur rounded-3xl p-8 relative overflow-hidden">
               <div className="grid lg:grid-cols-2 gap-16 items-center relative z-10">
                 <div>
                   <div className="flex items-center gap-3 mb-4">
@@ -287,7 +285,7 @@ export default function Home() {
 
       <section
         id="experience"
-        className="py-20 px-6 bg-black relative overflow-hidden"
+        className="pt-32 md:pt-36 pb-20 px-6 bg-black relative overflow-hidden"
       >
         {/* Experience timeline */}
         <input
@@ -372,12 +370,12 @@ export default function Home() {
 
             <div className="space-y-40">
               <div className="prisma-timeline-item" data-animate="true">
-                <div className="prisma-timeline-icon hover:scale-110 transition-all duration-300 group">
+                <div className="prisma-timeline-icon transition-all duration-300 group">
                   <span className="text-[#71E8DF] font-bold text-lg">Now</span>
                 </div>
 
                 <div className="timeline-cards">
-                  <div className="prisma-job-card group hover:scale-[1.02] transition-all duration-300">
+                  <div className="prisma-job-card group transition-all duration-300">
                     <div className="space-y-4">
                       <div className="flex items-center gap-3">
                         <span className="bg-green-500/20 text-green-300 px-3 py-1 rounded-full text-sm font-semibold">
@@ -429,7 +427,7 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <div className="prisma-content-card accelerate group hover:scale-[1.02] transition-all duration-300 flex flex-col gap-4 justify-center self-center">
+                  <div className="prisma-content-card accelerate group transition-all duration-300 flex flex-col gap-4 justify-center self-center">
                     <span className="text-xs md:text-sm text-white/70 tracking-wide">
                       n8n Flows
                     </span>
@@ -451,11 +449,11 @@ export default function Home() {
               </div>
 
               <div className="prisma-timeline-item" data-animate="true">
-                <div className="prisma-timeline-icon hover:scale-110 transition-all duration-300 group">
+                <div className="prisma-timeline-icon transition-all duration-300 group">
                   <span className="text-[#71E8DF] font-bold text-lg">2023</span>
                 </div>
                 <div className="timeline-cards">
-                  <div className="prisma-content-card group hover:scale-[1.02] transition-all duration-300 flex flex-col justify-center self-center">
+                  <div className="prisma-content-card group transition-all duration-300 flex flex-col justify-center self-center">
                     <div className="flex flex-col gap-5">
                       <span className="text-xs md:text-sm text-white/70 tracking-wide">
                         Products
@@ -501,7 +499,7 @@ export default function Home() {
                       </div>
                     </div>
                   </div>
-                  <div className="prisma-job-card group hover:scale-[1.02] transition-all duration-300">
+                  <div className="prisma-job-card group transition-all duration-300">
                     <div className="space-y-4">
                       <div className="flex items-center gap-3">
                         {/* <span className="bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full text-sm font-semibold">
@@ -555,11 +553,11 @@ export default function Home() {
               </div>
 
               <div className="prisma-timeline-item" data-animate="true">
-                <div className="prisma-timeline-icon hover:scale-110 transition-all duration-300 group">
+                <div className="prisma-timeline-icon transition-all duration-300 group">
                   <span className="text-[#71E8DF] font-bold text-lg">2021</span>
                 </div>
                 <div className="timeline-cards">
-                  <div className="prisma-job-card group hover:scale-[1.02] transition-all duration-300">
+                  <div className="prisma-job-card group transition-all duration-300">
                     <div className="space-y-4">
                       <div className="flex items-center gap-3">
                         {/* <span className="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
@@ -609,7 +607,7 @@ export default function Home() {
                       </div>
                     </div>
                   </div>
-                  <div className="prisma-content-card group hover:scale-[1.02] transition-all duration-300 flex flex-col justify-center self-center">
+                  <div className="prisma-content-card group transition-all duration-300 flex flex-col justify-center self-center">
                     <div className="flex flex-col gap-5">
                       <span className="text-xs md:text-sm text-white/70 tracking-wide">
                         Product
@@ -648,7 +646,10 @@ export default function Home() {
       </ErrorBoundary>
 
       {/* Contact */}
-      <section id="contact" className="py-20 px-6 bg-black">
+      <section
+        id="contact"
+        className="pt-32 md:pt-36 pb-20 px-6 bg-black"
+      >
         <div className="max-w-6xl mx-auto">
           <div className="text-center">
             <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 px-4 py-2 rounded-full mb-8">

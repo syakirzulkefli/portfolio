@@ -3,11 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "notes:generate": "tsc -p tsconfig.notes-gen.json && node dist-notes-gen/scripts/generate-notes.js",
-    "notes:watch": "node scripts/notes-watch.mjs",
     "dev": "node scripts/dev.mjs",
-    "build": "npm run notes:generate && next build",
-    "pages:build": "npm run notes:generate && next build && next-on-pages",
+    "build": "next build",
+    "pages:build": "next build && next-on-pages",
     "start": "next start",
     "lint": "eslint"
   },

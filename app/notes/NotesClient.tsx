@@ -5,21 +5,33 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
+import AdminNoteDrawer, { type AdminNoteRecord } from "./AdminNoteDrawer";
+import TrashDrawer from "./TrashDrawer";
+import MdxPreviewClient from "./mdx/MdxPreviewClient";
 import {
+  firstSectionForDomain,
   DomainId,
+  isSectionInDomain,
   Level,
   Note,
+  NoteNode,
   SectionId,
   SortBy,
   domains,
+  sectionLabelForId,
   sections,
 } from "./data";
-import type { NotesOutlineGroup } from "./outline";
 
 type NotesClientProps = {
   initialNotes: Note[];
-  outline: NotesOutlineGroup[];
+  initialNodes: NoteNode[];
+  initialDomain?: DomainId;
+  initialSection?: SectionId;
   initialActiveNoteId?: string | null;
+  initialIsAuthenticated?: boolean;
+  initialIsAdmin?: boolean;
+  initialDataNotice?: string | null;
+  initialAuthAvailable?: boolean;
   children?: ReactNode;
 };
 
@@ -37,7 +49,7 @@ const noteSearchHaystack = (note: Note) =>
       note.id,
       note.title,
       note.summary,
-      note.chapterTitle,
+      note.chapterTitle ?? "",
       note.section,
       note.tags.join(" "),
     ].join(" ")
@@ -51,6 +63,13 @@ const noteMatchesQuery = (note: Note, normalizedTerms: string[]) => {
 
 const escapeRegExp = (value: string) =>
   value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const stripSectionPrefixFromTitle = (title: string, section: SectionId) => {
+  const sectionLabel = sectionLabelForId(section);
+  const sectionPrefix = new RegExp(`^${escapeRegExp(sectionLabel)}\\s*:\\s*`, "i");
+  const stripped = title.replace(sectionPrefix, "").trim();
+  return stripped || title;
+};
 
 const highlightSnippetParts = (text: string, terms: string[]) => {
   if (!terms.length) return [text];
@@ -71,6 +90,115 @@ const highlightSnippetParts = (text: string, terms: string[]) => {
       <span key={`${part}-${idx}`}>{part}</span>
     );
   });
+};
+
+const domainRank: Record<DomainId, number> = {
+  software: 0,
+  trading: 1,
+  motivation: 2,
+};
+
+const toSortRank = (value: number | undefined) => {
+  if (!Number.isFinite(value)) return Number.MAX_SAFE_INTEGER;
+  const normalized = Math.trunc(value as number);
+  return normalized > 0 ? normalized : Number.MAX_SAFE_INTEGER;
+};
+
+type TreeNode = NoteNode & { children: TreeNode[] };
+
+const compareTreeNodes = (a: NoteNode, b: NoteNode) => {
+  const aOrder = toSortRank(a.sortOrder);
+  const bOrder = toSortRank(b.sortOrder);
+  if (aOrder !== bOrder) return aOrder - bOrder;
+  if (a.kind !== b.kind) return a.kind === "folder" ? -1 : 1;
+  return a.title.localeCompare(b.title);
+};
+
+const buildTreeForSection = (
+  nodes: NoteNode[],
+  domain: DomainId,
+  section: SectionId
+) => {
+  const scoped = nodes.filter(
+    (node) => node.domain === domain && node.section === section
+  );
+  const nodeById = new Map(scoped.map((node) => [node.id, node]));
+  const childrenByParentId = new Map<string | null, NoteNode[]>();
+
+  for (const node of scoped) {
+    const parentId =
+      node.parentId && nodeById.has(node.parentId) ? node.parentId : null;
+    const siblings = childrenByParentId.get(parentId) ?? [];
+    siblings.push({ ...node, parentId });
+    childrenByParentId.set(parentId, siblings);
+  }
+
+  for (const siblings of childrenByParentId.values()) {
+    siblings.sort(compareTreeNodes);
+  }
+
+  const build = (parentId: string | null): TreeNode[] =>
+    (childrenByParentId.get(parentId) ?? []).map((node) => ({
+      ...node,
+      children: build(node.id),
+    }));
+
+  const ancestorIdsForNode = (nodeId: string) => {
+    const ids: string[] = [];
+    let cursor = nodeById.get(nodeId) ?? null;
+    let safety = 0;
+    while (cursor?.parentId && safety < 100) {
+      ids.unshift(cursor.parentId);
+      cursor = nodeById.get(cursor.parentId) ?? null;
+      safety += 1;
+    }
+    return ids;
+  };
+
+  return {
+    roots: build(null),
+    nodeById,
+    childrenByParentId,
+    ancestorIdsForNode,
+    scoped,
+  };
+};
+
+const collectDescendantIds = (nodes: NoteNode[], rootId: string) => {
+  const childrenByParentId = new Map<string, string[]>();
+  for (const node of nodes) {
+    if (!node.parentId) continue;
+    const siblings = childrenByParentId.get(node.parentId) ?? [];
+    siblings.push(node.id);
+    childrenByParentId.set(node.parentId, siblings);
+  }
+
+  const ids = new Set<string>([rootId]);
+  const stack = [rootId];
+  while (stack.length > 0) {
+    const current = stack.pop() ?? "";
+    const children = childrenByParentId.get(current) ?? [];
+    for (const childId of children) {
+      if (ids.has(childId)) continue;
+      ids.add(childId);
+      stack.push(childId);
+    }
+  }
+  return ids;
+};
+
+const compareNotesForList = (a: Note, b: Note) => {
+  const domainDiff = domainRank[a.domain] - domainRank[b.domain];
+  if (domainDiff !== 0) return domainDiff;
+
+  const chapterDiff = (a.chapterTitle ?? "").localeCompare(b.chapterTitle ?? "");
+  if (chapterDiff !== 0) return chapterDiff;
+
+  const aOrder = toSortRank(a.sortOrder);
+  const bOrder = toSortRank(b.sortOrder);
+  if (aOrder !== bOrder) return aOrder - bOrder;
+
+  return a.title.localeCompare(b.title);
 };
 
 const JsIcon = () => (
@@ -242,10 +370,232 @@ const InvertingImgIcon = ({
   <IconImage src={src} alt={label} invert={isDark} />
 );
 
+const FundamentalIcon = () => (
+  <svg viewBox="0 0 40 40" aria-hidden="true" className="w-10 h-10">
+    <rect
+      x="6"
+      y="7"
+      width="28"
+      height="26"
+      rx="5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    />
+    <path
+      d="M12 24h4M20 24h8M12 19h8M23 19h5M12 14h16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+const TechnicalIcon = () => (
+  <svg viewBox="0 0 40 40" aria-hidden="true" className="w-10 h-10">
+    <path
+      d="M7 29h26M12 24v-8M20 27v-13M28 22v-9"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    <rect x="10" y="19" width="4" height="5" rx="1" fill="currentColor" />
+    <rect x="18" y="16" width="4" height="8" rx="1" fill="currentColor" />
+    <rect x="26" y="18" width="4" height="4" rx="1" fill="currentColor" />
+  </svg>
+);
+
+const PastWinnerIcon = () => (
+  <svg viewBox="0 0 40 40" aria-hidden="true" className="w-10 h-10">
+    <path
+      d="M14 11h12v4a6 6 0 01-12 0v-4Zm-3 1h3v2a4 4 0 01-3 4v-6Zm18 0h3v6a4 4 0 01-3-4v-2Z"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M20 21v4M16 29h8"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    <circle cx="20" cy="31" r="2" fill="currentColor" />
+  </svg>
+);
+
+const CurrentCounterIcon = () => (
+  <svg viewBox="0 0 40 40" aria-hidden="true" className="w-10 h-10">
+    <path
+      d="M8 28h24M11 25l6-6 5 3 7-8"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M26 14h4v4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <circle cx="11" cy="25" r="1.8" fill="currentColor" />
+    <circle cx="17" cy="19" r="1.8" fill="currentColor" />
+    <circle cx="22" cy="22" r="1.8" fill="currentColor" />
+  </svg>
+);
+
+const FcpoIcon = () => (
+  <svg viewBox="0 0 40 40" aria-hidden="true" className="w-10 h-10">
+    <circle
+      cx="20"
+      cy="21"
+      r="11"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    />
+    <path
+      d="M18 27c3-2 5-6 5-11-4 1-8 5-9 9 1 1 2 2 4 2Z"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <circle cx="27" cy="14" r="2" fill="currentColor" />
+  </svg>
+);
+
+const MindsetIcon = () => (
+  <svg viewBox="0 0 40 40" aria-hidden="true" className="w-10 h-10">
+    <circle cx="20" cy="20" r="11" fill="none" stroke="currentColor" strokeWidth="2" />
+    <path
+      d="M16 20h8M20 16v8M13 27l2.5-2.5M27 13l-2.5 2.5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+const DisciplineIcon = () => (
+  <svg viewBox="0 0 40 40" aria-hidden="true" className="w-10 h-10">
+    <rect
+      x="10"
+      y="8"
+      width="20"
+      height="24"
+      rx="3"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    />
+    <path
+      d="M14 16l4 4 8-8M14 25h12"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const HabitIcon = () => (
+  <svg viewBox="0 0 40 40" aria-hidden="true" className="w-10 h-10">
+    <rect
+      x="9"
+      y="11"
+      width="22"
+      height="20"
+      rx="4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    />
+    <path
+      d="M9 17h22M15 8v6M25 8v6"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    <circle cx="16" cy="23" r="1.5" fill="currentColor" />
+    <circle cx="21" cy="23" r="1.5" fill="currentColor" />
+    <circle cx="26" cy="23" r="1.5" fill="currentColor" />
+  </svg>
+);
+
+const FocusIcon = () => (
+  <svg viewBox="0 0 40 40" aria-hidden="true" className="w-10 h-10">
+    <circle cx="20" cy="20" r="10" fill="none" stroke="currentColor" strokeWidth="2" />
+    <circle cx="20" cy="20" r="5" fill="none" stroke="currentColor" strokeWidth="2" />
+    <circle cx="20" cy="20" r="1.8" fill="currentColor" />
+  </svg>
+);
+
+const GrowthIcon = () => (
+  <svg viewBox="0 0 40 40" aria-hidden="true" className="w-10 h-10">
+    <path
+      d="M9 29h22M12 25l5-5 4 3 7-8M26 15h5v5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const GitHubLogo = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
+    <path
+      fill="currentColor"
+      d="M12 .5A11.5 11.5 0 0 0 .5 12.14c0 5.17 3.29 9.55 7.86 11.1.57.1.78-.25.78-.56v-2.16c-3.2.71-3.88-1.4-3.88-1.4-.52-1.36-1.29-1.72-1.29-1.72-1.05-.73.08-.71.08-.71 1.16.09 1.77 1.22 1.77 1.22 1.04 1.82 2.73 1.3 3.39.99.1-.78.4-1.3.73-1.6-2.56-.3-5.25-1.3-5.25-5.83 0-1.3.46-2.36 1.2-3.2-.12-.31-.52-1.56.11-3.24 0 0 .98-.32 3.2 1.22a10.96 10.96 0 0 1 5.84 0c2.22-1.54 3.2-1.22 3.2-1.22.63 1.68.23 2.93.11 3.24.75.84 1.2 1.9 1.2 3.2 0 4.54-2.7 5.52-5.26 5.82.41.37.79 1.09.79 2.2v3.27c0 .31.2.67.79.56a11.63 11.63 0 0 0 7.85-11.1A11.5 11.5 0 0 0 12 .5Z"
+    />
+  </svg>
+);
+
+const GoogleLogo = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
+    <path
+      fill="#EA4335"
+      d="M12 10.2v3.9h5.5a4.7 4.7 0 0 1-2 3.1l3.2 2.5c1.9-1.8 3-4.4 3-7.5 0-.7-.1-1.3-.2-2H12z"
+    />
+    <path
+      fill="#34A853"
+      d="M12 22c2.7 0 4.9-.9 6.5-2.4l-3.2-2.5c-.9.6-2 .9-3.3.9-2.5 0-4.6-1.7-5.3-4H3.4v2.6A10 10 0 0 0 12 22z"
+    />
+    <path
+      fill="#4A90E2"
+      d="M6.7 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.4H3.4A10 10 0 0 0 2 12c0 1.6.4 3.1 1.4 4.6L6.7 14z"
+    />
+    <path
+      fill="#FBBC05"
+      d="M12 5.9c1.5 0 2.8.5 3.9 1.5l2.9-2.9C16.8 2.7 14.6 2 12 2a10 10 0 0 0-8.6 5.4L6.7 10c.7-2.4 2.8-4.1 5.3-4.1z"
+    />
+  </svg>
+);
+
 export default function NotesClient({
   initialNotes,
-  outline,
+  initialNodes,
+  initialDomain = "software",
+  initialSection = firstSectionForDomain(initialDomain),
   initialActiveNoteId,
+  initialIsAuthenticated = false,
+  initialIsAdmin = false,
+  initialDataNotice = null,
+  initialAuthAvailable = true,
   children,
 }: NotesClientProps) {
   const router = useRouter();
@@ -262,17 +612,31 @@ export default function NotesClient({
     Record<string, string[]>
   >({});
   const [isSearchingContent, setIsSearchingContent] = useState(false);
-  const [notes] = useState<Note[]>(initialNotes);
-  const [activeDomain, setActiveDomain] = useState<DomainId>("software");
-  const [activeSection, setActiveSection] = useState<SectionId | "all">("all");
-  const [activeChapterId, setActiveChapterId] = useState<string | null>(null);
+  const [notes, setNotes] = useState<Note[]>(initialNotes);
+  const [nodes, setNodes] = useState<NoteNode[]>(initialNodes);
+  const [activeDomain, setActiveDomain] = useState<DomainId>(initialDomain);
+  const [activeSection, setActiveSection] = useState<SectionId>(initialSection);
+  const [selectedTreeNodeId, setSelectedTreeNodeId] = useState<string | null>(
+    initialActiveNoteId ?? null
+  );
   const [activeNoteId, setActiveNoteId] = useState<string | null>(
     initialActiveNoteId ?? initialNotes[0]?.id ?? null
   );
   const [activeLevel, setActiveLevel] = useState<Level | "all">("all");
   const [sortBy] = useState<SortBy>("recent");
-  const [activeTag, setActiveTag] = useState<string | null>(null);
   const [sectionsOpen, setSectionsOpen] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [adminDrawerOpen, setAdminDrawerOpen] = useState(false);
+  const [adminDrawerMode, setAdminDrawerMode] = useState<"new" | "edit">("edit");
+  const [adminDrawerNoteId, setAdminDrawerNoteId] = useState<string | null>(null);
+  const [adminDrawerSessionKey, setAdminDrawerSessionKey] = useState(0);
+  const [trashDrawerOpen, setTrashDrawerOpen] = useState(false);
+  const [adminActionError, setAdminActionError] = useState<string | null>(null);
+  const [adminActionMessage, setAdminActionMessage] = useState<string | null>(null);
+  const [adminDeletePending, setAdminDeletePending] = useState(false);
+  const [liveMarkdownById, setLiveMarkdownById] = useState<Record<string, string>>(
+    {}
+  );
   const searchRef = useRef<HTMLInputElement | null>(null);
   const searchContainerRef = useRef<HTMLDivElement | null>(null);
   const lastDomainRef = useRef<DomainId | null>(null);
@@ -280,9 +644,7 @@ export default function NotesClient({
 
   const clearFilters = () => {
     setQuery("");
-    setActiveTag(null);
     setActiveLevel("all");
-    setActiveSection("all");
   };
 
   useEffect(() => {
@@ -348,25 +710,54 @@ export default function NotesClient({
   useEffect(() => {
     if (!initialActiveNoteId) return;
     setActiveNoteId(initialActiveNoteId);
+    setSelectedTreeNodeId(initialActiveNoteId);
   }, [initialActiveNoteId]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const urlNoteId = searchParams.get("note");
-    if (!activeNoteId) {
-      if (urlNoteId) {
-        const next = new URLSearchParams(searchParamsString);
-        next.delete("note");
-        router.replace(`?${next.toString()}`, { scroll: false });
-      }
-      return;
-    }
-    if (activeNoteId === urlNoteId) return;
+    setNotes(initialNotes);
+    setNodes(initialNodes);
+  }, [initialNotes, initialNodes]);
 
+  useEffect(() => {
+    setActiveDomain(initialDomain);
+    setActiveSection(initialSection);
+  }, [initialDomain, initialSection]);
+
+  useEffect(() => {
     const next = new URLSearchParams(searchParamsString);
-    next.set("note", activeNoteId);
+    let changed = false;
+    const activeNoteInCurrentSection =
+      !!activeNoteId &&
+      notes.some(
+        (note) =>
+          note.id === activeNoteId &&
+          note.domain === activeDomain &&
+          note.section === activeSection
+      );
+
+    if (next.get("domain") !== activeDomain) {
+      next.set("domain", activeDomain);
+      changed = true;
+    }
+
+    if (next.get("section") !== activeSection) {
+      next.set("section", activeSection);
+      changed = true;
+    }
+
+    if (activeNoteInCurrentSection && activeNoteId) {
+      if (next.get("note") !== activeNoteId) {
+        next.set("note", activeNoteId);
+        changed = true;
+      }
+    } else if (next.has("note")) {
+      next.delete("note");
+      changed = true;
+    }
+
+    if (!changed) return;
     router.replace(`?${next.toString()}`, { scroll: false });
-  }, [activeNoteId, router, searchParams, searchParamsString]);
+  }, [activeDomain, activeNoteId, activeSection, notes, router, searchParamsString]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -387,21 +778,46 @@ export default function NotesClient({
   }, [theme]);
 
   useEffect(() => {
-    setActiveChapterId(null);
-    setActiveTag(null);
     setActiveSection((prev) => {
-      if (prev === "all") return "all";
-      const existsInDomain = notes.some(
-        (note) => note.domain === activeDomain && note.section === prev
-      );
-      return existsInDomain ? prev : "all";
+      const valid = isSectionInDomain(activeDomain, prev);
+      return valid ? prev : firstSectionForDomain(activeDomain);
     });
-  }, [activeDomain, notes]);
+  }, [activeDomain]);
+
+  useEffect(() => {
+    setSelectedTreeNodeId((prev) => {
+      if (!prev) return null;
+      const stillVisible = nodes.some(
+        (node) =>
+          node.id === prev &&
+          node.domain === activeDomain &&
+          node.section === activeSection
+      );
+      return stillVisible ? prev : null;
+    });
+  }, [activeDomain, activeSection, nodes]);
 
   const domainNotes = useMemo(
     () => notes.filter((note) => note.domain === activeDomain),
     [notes, activeDomain]
   );
+  const domainNodes = useMemo(
+    () => nodes.filter((node) => node.domain === activeDomain),
+    [nodes, activeDomain]
+  );
+  const sectionNotes = useMemo(
+    () => domainNotes.filter((note) => note.section === activeSection),
+    [domainNotes, activeSection]
+  );
+  const sectionNodes = useMemo(
+    () => domainNodes.filter((node) => node.section === activeSection),
+    [domainNodes, activeSection]
+  );
+  const isNoteLocked = (noteId: string) => {
+    if (initialIsAdmin) return false;
+    const note = notes.find((item) => item.id === noteId);
+    return note?.domain === "trading";
+  };
 
   const filtered = useMemo(() => {
     const normalizedQuery = normalizeForSearch(query);
@@ -410,10 +826,8 @@ export default function NotesClient({
       !!normalizedQuery && contentMatchQuery === normalizedQuery;
     return [...domainNotes]
       .filter((note) => {
-        if (activeSection !== "all" && note.section !== activeSection)
-          return false;
+        if (note.section !== activeSection) return false;
         if (activeLevel !== "all" && note.level !== activeLevel) return false;
-        if (activeTag && !note.tags.includes(activeTag)) return false;
         const metaMatch = noteMatchesQuery(note, terms);
         if (!terms.length) return true;
         if (metaMatch) return true;
@@ -441,7 +855,6 @@ export default function NotesClient({
     domainNotes,
     activeSection,
     activeLevel,
-    activeTag,
     query,
     sortBy,
     contentMatchQuery,
@@ -450,9 +863,7 @@ export default function NotesClient({
 
   const filtersActive =
     normalizeForSearch(query).length > 0 ||
-    activeSection !== "all" ||
-    activeLevel !== "all" ||
-    !!activeTag;
+    activeLevel !== "all";
 
   const queryNormalized = normalizeForSearch(query);
   const contentSearchPending =
@@ -464,17 +875,40 @@ export default function NotesClient({
 
   const searchResults = useMemo(() => {
     if (!queryNormalized) return [];
-    return filtered.map((note) => ({
-      note,
-      snippets: contentSnippets[note.id] || [note.summary],
-    }));
-  }, [filtered, contentSnippets, queryNormalized]);
+    const contentMatchesReady = contentMatchQuery === queryNormalized;
+    return [...domainNotes]
+      .filter((note) => {
+        if (activeLevel !== "all" && note.level !== activeLevel) return false;
+        if (noteMatchesQuery(note, searchTerms)) return true;
+        if (!contentMatchesReady) return false;
+        return contentMatchIds?.has(note.id) ?? false;
+      })
+      .sort(compareNotesForList)
+      .map((note) => ({
+        note,
+        snippets: contentSnippets[note.id] || [note.summary],
+      }));
+  }, [
+    activeLevel,
+    contentMatchIds,
+    contentMatchQuery,
+    contentSnippets,
+    domainNotes,
+    queryNormalized,
+    searchTerms,
+  ]);
+
+  const tree = useMemo(
+    () => buildTreeForSection(nodes, activeDomain, activeSection),
+    [nodes, activeDomain, activeSection]
+  );
+
+  const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
 
   const handleResultClick = (note: Note) => {
-    setActiveTag(null);
     setActiveLevel("all");
     setActiveSection(note.section);
-    setActiveChapterId(note.chapterId);
+    setSelectedTreeNodeId(note.id);
     setActiveNoteId(note.id);
     setSectionsOpen(false);
     setIsResultsOpen(false);
@@ -483,56 +917,303 @@ export default function NotesClient({
   };
 
   useEffect(() => {
+    const targetId = selectedTreeNodeId ?? activeNoteId;
+    if (!targetId) return;
+    const ancestors = tree.ancestorIdsForNode(targetId);
+    if (!ancestors.length) return;
+    setExpandedFolders((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const id of ancestors) {
+        if (!next[id]) {
+          next[id] = true;
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [activeNoteId, selectedTreeNodeId, tree]);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
     const domainChanged = lastDomainRef.current !== activeDomain;
     lastDomainRef.current = activeDomain;
 
-    const hasActiveInDomain =
-      !!activeNoteId && domainNotes.some((note) => note.id === activeNoteId);
+    const hasActiveInSection =
+      !!activeNoteId && sectionNotes.some((note) => note.id === activeNoteId);
     const stored = window.localStorage.getItem(
       `notes-last-note-${activeDomain}`
     );
     const storedValid =
-      !!stored && domainNotes.some((note) => note.id === stored);
+      !!stored && sectionNotes.some((note) => note.id === stored);
 
-    const selectionPool = queryNormalized ? domainNotes : filtered;
+    const selectionPool = queryNormalized ? sectionNotes : filtered;
 
-    if ((domainChanged || !hasActiveInDomain) && storedValid) {
+    if ((domainChanged || !hasActiveInSection) && storedValid) {
       setActiveNoteId(stored);
+      setSelectedTreeNodeId(stored);
       return;
     }
-    if (domainChanged || !hasActiveInDomain) {
+    if (domainChanged || !hasActiveInSection) {
       if (selectionPool[0]?.id) {
         setActiveNoteId(selectionPool[0].id);
+        setSelectedTreeNodeId(selectionPool[0].id);
+      } else {
+        setActiveNoteId(null);
+        setSelectedTreeNodeId(null);
       }
     }
-  }, [activeDomain, domainNotes, filtered, activeNoteId, queryNormalized]);
+  }, [activeDomain, sectionNotes, filtered, activeNoteId, queryNormalized]);
 
   const activeNote =
     filtered.find((note) => note.id === activeNoteId) || filtered[0] || null;
-  const hasAnyNotes = domainNotes.length > 0;
+  const activeNoteLocked = !!activeNote && isNoteLocked(activeNote.id);
+  const isTradingLocked = activeDomain === "trading" && !initialIsAdmin;
+  const hasAnyNotes = sectionNotes.length > 0;
+  const showSidebar = sectionNodes.length > 0 && !isTradingLocked;
+  const loginNextParams = new URLSearchParams();
+  loginNextParams.set("domain", activeDomain);
+  if (activeNote?.id) loginNextParams.set("note", activeNote.id);
+  const loginNext = `/notes?${loginNextParams.toString()}`;
+  const loginHrefFor = (nextPath: string) => {
+    const params = new URLSearchParams({ next: nextPath });
+    if (!initialAuthAvailable) {
+      params.set("error", "provider_unavailable");
+    }
+    return `/login?${params.toString()}`;
+  };
+  const loginHref = loginHrefFor(loginNext);
+  const tradingLoginHref = loginHrefFor("/notes?domain=trading");
+
+  const handleSignOut = async () => {
+    await fetch("/api/auth/signout", { method: "POST" });
+    window.location.href = `/notes?domain=${encodeURIComponent(activeDomain)}`;
+  };
+
+  const openAdminNew = () => {
+    if (!initialIsAdmin) return;
+    setAdminActionError(null);
+    setAdminActionMessage(null);
+    setAdminDrawerSessionKey((prev) => prev + 1);
+    setAdminDrawerMode("new");
+    setAdminDrawerNoteId(null);
+    setAdminDrawerOpen(true);
+  };
+
+  const openAdminEdit = (noteId: string) => {
+    if (!initialIsAdmin) return;
+    setAdminActionError(null);
+    setAdminActionMessage(null);
+    setAdminDrawerSessionKey((prev) => prev + 1);
+    setAdminDrawerMode("edit");
+    setAdminDrawerNoteId(noteId);
+    setAdminDrawerOpen(true);
+  };
+
+  const adminRecordToNode = (item: AdminNoteRecord): NoteNode => ({
+    id: item.id,
+    kind: item.kind,
+    domain: item.domain,
+    title: item.title,
+    section: item.section,
+    parentId: item.parent_id ?? null,
+    chapterId: item.parent_id ?? null,
+    chapterTitle: item.parent_id
+      ? nodes.find((node) => node.id === item.parent_id)?.title ?? null
+      : null,
+    level: item.level,
+    summary: item.summary,
+    tags: Array.isArray(item.tags) ? item.tags : [],
+    updatedAt: item.updated_at
+      ? new Date(item.updated_at).toISOString()
+      : new Date().toISOString(),
+    pinned: item.pinned,
+    sortOrder: item.sort_order,
+    isPublished: item.is_published,
+  });
+
+  const applyAdminRecord = (item: AdminNoteRecord) => {
+    const normalizedNode = adminRecordToNode(item);
+
+    setNodes((prev) => {
+      const next = [...prev];
+      const idx = next.findIndex((node) => node.id === normalizedNode.id);
+      if (idx >= 0) {
+        next[idx] = { ...next[idx], ...normalizedNode };
+      } else {
+        next.push(normalizedNode);
+      }
+      next.sort(compareTreeNodes);
+      return next;
+    });
+
+    if (item.kind === "note") {
+      const normalizedNote = normalizedNode as Note;
+      setNotes((prev) => {
+        const next = [...prev];
+        const idx = next.findIndex((existing) => existing.id === normalizedNote.id);
+        if (idx >= 0) {
+          next[idx] = { ...next[idx], ...normalizedNote };
+        } else {
+          next.push(normalizedNote);
+        }
+        next.sort(compareNotesForList);
+        return next;
+      });
+      setLiveMarkdownById((prev) => ({ ...prev, [item.id]: item.content ?? "" }));
+    }
+  };
+
+  const handleAdminSaved = (note: AdminNoteRecord) => {
+    setAdminDrawerOpen(false);
+    setAdminActionError(null);
+    setAdminActionMessage("Saved.");
+    applyAdminRecord(note);
+
+    setQuery("");
+    setActiveLevel("all");
+    setActiveDomain(note.domain);
+    setActiveSection(note.section);
+    setSelectedTreeNodeId(note.id);
+    if (note.kind === "folder") {
+      setExpandedFolders((prev) => ({ ...prev, [note.id]: true }));
+    } else {
+      setActiveNoteId(note.id);
+    }
+    router.refresh();
+  };
+
+  const handleAdminPersisted = (note: AdminNoteRecord) => {
+    applyAdminRecord(note);
+    setQuery("");
+    setActiveLevel("all");
+    setActiveDomain(note.domain);
+    setActiveSection(note.section);
+    setSelectedTreeNodeId(note.id);
+    if (note.kind === "folder") {
+      setExpandedFolders((prev) => ({ ...prev, [note.id]: true }));
+    } else {
+      setActiveNoteId(note.id);
+    }
+  };
+
+  const handleAdminDeleted = (deletedId: string) => {
+    setAdminDrawerOpen(false);
+    setAdminActionError(null);
+    setAdminActionMessage("Moved to Trash.");
+
+    const deletedIds = collectDescendantIds(nodes, deletedId);
+    let nextNoteId: string | null = null;
+    let nextDomain: DomainId | null = null;
+
+    setNodes((prev) => prev.filter((item) => !deletedIds.has(item.id)));
+    setNotes((prev) => {
+      const remaining = prev.filter((item) => !deletedIds.has(item.id));
+      const preferred =
+        remaining.find(
+          (item) => item.domain === activeDomain && item.section === activeSection
+        )?.id ??
+        remaining.find((item) => item.domain === activeDomain)?.id ??
+        remaining[0]?.id ??
+        null;
+      nextNoteId = preferred;
+      nextDomain =
+        preferred
+          ? (remaining.find((item) => item.id === preferred)?.domain ?? null)
+          : null;
+      return remaining;
+    });
+
+    if (nextDomain) setActiveDomain(nextDomain);
+    setSelectedTreeNodeId(nextNoteId);
+    setActiveNoteId(nextNoteId);
+    router.refresh();
+  };
+
+  const handleAdminRestored = (note: AdminNoteRecord) => {
+    setAdminActionError(null);
+    setAdminActionMessage(null);
+    applyAdminRecord(note);
+
+    router.refresh();
+  };
+
+  const handleAdminHardDeleted = (noteId: string) => {
+    setAdminActionError(null);
+    setAdminActionMessage("Deleted forever.");
+    const deletedIds = collectDescendantIds(nodes, noteId);
+    setNodes((prev) => prev.filter((item) => !deletedIds.has(item.id)));
+    setNotes((prev) => prev.filter((item) => !deletedIds.has(item.id)));
+    setLiveMarkdownById((prev) => {
+      const hasAny = [...deletedIds].some((id) => id in prev);
+      if (!hasAny) return prev;
+      const next = { ...prev };
+      for (const id of deletedIds) {
+        delete next[id];
+      }
+      return next;
+    });
+    router.refresh();
+  };
+
+  const handleDeleteActiveNote = async () => {
+    if (!initialIsAdmin) return;
+    if (!activeNote || activeNoteLocked) return;
+    if (adminDeletePending) return;
+
+    if (!window.confirm(`Move note "${activeNote.title}" to Trash?`)) return;
+
+    setAdminDeletePending(true);
+    setAdminActionError(null);
+    setAdminActionMessage(null);
+
+    try {
+      const response = await fetch(
+        `/api/notes/admin/notes/${encodeURIComponent(activeNote.id)}`,
+        { method: "DELETE" }
+      );
+      const payload = (await response.json()) as { ok?: boolean; error?: string };
+      if (!response.ok || !payload.ok) {
+        setAdminActionError(payload.error || "Delete failed.");
+        return;
+      }
+      handleAdminDeleted(activeNote.id);
+    } catch {
+      setAdminActionError("Delete failed.");
+    } finally {
+      setAdminDeletePending(false);
+    }
+  };
 
   useEffect(() => {
     if (queryNormalized) return;
     if (filtersActive && filtered[0] && activeNoteId !== filtered[0].id) {
-      setActiveChapterId(filtered[0].chapterId);
       setActiveNoteId(filtered[0].id);
+      setSelectedTreeNodeId(filtered[0].id);
       return;
     }
     if (activeNote) return;
     setActiveNoteId(filtered[0]?.id ?? null);
+    setSelectedTreeNodeId(filtered[0]?.id ?? null);
   }, [filtered, activeNote, filtersActive, activeNoteId, queryNormalized]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!activeNoteId) return;
-    const existsInDomain = domainNotes.some((note) => note.id === activeNoteId);
-    if (!existsInDomain) return;
+    const existsInSection = sectionNotes.some((note) => note.id === activeNoteId);
+    if (!existsInSection) return;
     window.localStorage.setItem(
       `notes-last-note-${activeDomain}`,
       activeNoteId
     );
-  }, [activeNoteId, activeDomain, domainNotes]);
+  }, [activeNoteId, activeDomain, sectionNotes]);
+
+  useEffect(() => {
+    setAdminActionError(null);
+    setAdminActionMessage(null);
+  }, [activeNoteId]);
+
+  const activeLiveMarkdown = activeNote ? liveMarkdownById[activeNote.id] : undefined;
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -571,10 +1252,6 @@ export default function NotesClient({
 
   const headingSm = `${textPrimary} text-sm font-semibold tracking-[0.08em] uppercase`;
   const bodyBase = `${textBody} text-sm leading-[1.75]`;
-
-  const chapterActiveClass = isDark
-    ? "bg-sky-500/15 text-sky-100 ring-1 ring-sky-500/40 shadow-sm shadow-sky-500/20 border border-sky-500/40"
-    : "bg-sky-500/10 text-sky-950 ring-1 ring-sky-500/30 border border-sky-500/30";
 
   const itemActiveClass = isDark
     ? "bg-sky-500/15 text-sky-100 ring-1 ring-sky-500/30 border border-sky-500/30 shadow-sky-500/15"
@@ -631,58 +1308,38 @@ export default function NotesClient({
     ? "h-20 md:h-24 w-auto shrink-0 drop-shadow-[0_0_10px_rgba(0,0,0,0.65)]"
     : "h-20 md:h-24 w-auto shrink-0";
 
-  const quoteText =
-    activeDomain === "trading"
-      ? "“Gain more, spend less.”"
-      : "“Any fool can write code that a computer can understand. Good programmers write code that humans can understand.”";
-  const quoteAuthor =
-    activeDomain === "trading" ? "Anonymous" : "Martin Fowler";
-
   const availableSections = useMemo(() => {
     const set = new Set<SectionId>();
-    domainNotes.forEach((note) => set.add(note.section));
+    domainNodes.forEach((node) => set.add(node.section));
     return set;
-  }, [domainNotes]);
+  }, [domainNodes]);
 
-  const availableTags = useMemo(() => {
-    const set = new Set<string>();
-    domainNotes.forEach((note) => note.tags.forEach((t) => set.add(t)));
-    return set;
-  }, [domainNotes]);
-
-  type QuickIconItem =
-    | { kind: "section"; id: SectionId; label: string; icon: ReactNode }
-    | { kind: "tag"; tag: string; label: string; icon: ReactNode };
+  type QuickIconItem = { id: SectionId; label: string; icon: ReactNode };
 
   const sectionQuickIcons = [
     {
-      kind: "section",
       id: "java",
       label: "Java",
       icon: <JavaIcon isDark={isDark} />,
     },
     {
-      kind: "section",
       id: "javascript",
       label: "JavaScript",
       icon: <JsIcon />,
     },
     {
-      kind: "section",
       id: "typescript",
       label: "TypeScript",
       icon: <TsIcon />,
     },
     {
-      kind: "section",
       id: "react",
       label: "React",
       icon: <Icons8MonoIcon iconId="122637" label="React" isDark={isDark} />,
     },
-    { kind: "section", id: "node", label: "Node.js", icon: <NodeIcon /> },
-    { kind: "section", id: "css", label: "CSS", icon: <CssIcon /> },
+    { id: "node", label: "Node.js", icon: <NodeIcon /> },
+    { id: "css", label: "CSS", icon: <CssIcon /> },
     {
-      kind: "section",
       id: "algorithms",
       label: "Data Structures & Algorithms",
       icon: (
@@ -694,8 +1351,7 @@ export default function NotesClient({
       ),
     },
     {
-      kind: "tag",
-      tag: "design-patterns",
+      id: "designPatterns",
       label: "Design Patterns",
       icon: (
         <InvertingImgIcon
@@ -706,28 +1362,88 @@ export default function NotesClient({
       ),
     },
     {
-      kind: "tag",
-      tag: "nextjs",
+      id: "nextjs",
       label: "Next.js",
       icon: (
         <Icons8MonoIcon iconId="MWiBjkuHeMVq" label="Next.js" isDark={isDark} />
       ),
     },
     {
-      kind: "tag",
-      tag: "docker",
+      id: "docker",
       label: "Docker",
       icon: (
         <Icons8MonoIcon iconId="xwH6LOQ7Ckfn" label="Docker" isDark={isDark} />
       ),
     },
     {
-      kind: "tag",
-      tag: "git",
+      id: "git",
       label: "Git",
       icon: <Icons8MonoIcon iconId="38388" label="Git" isDark={isDark} />,
     },
   ] satisfies ReadonlyArray<QuickIconItem>;
+
+  const tradingQuickIcons = [
+    {
+      id: "tradingFundamentals",
+      label: "Fundamental",
+      icon: <FundamentalIcon />,
+    },
+    {
+      id: "tradingTechnical",
+      label: "Technical",
+      icon: <TechnicalIcon />,
+    },
+    {
+      id: "pastWinner",
+      label: "Past Winner",
+      icon: <PastWinnerIcon />,
+    },
+    {
+      id: "currentCounter",
+      label: "Current Counter",
+      icon: <CurrentCounterIcon />,
+    },
+    {
+      id: "fcpo",
+      label: "FCPO",
+      icon: <FcpoIcon />,
+    },
+  ] satisfies ReadonlyArray<QuickIconItem>;
+
+  const motivationQuickIcons = [
+    {
+      id: "mindset",
+      label: "Mindset",
+      icon: <MindsetIcon />,
+    },
+    {
+      id: "discipline",
+      label: "Discipline",
+      icon: <DisciplineIcon />,
+    },
+    {
+      id: "habits",
+      label: "Habits",
+      icon: <HabitIcon />,
+    },
+    {
+      id: "focus",
+      label: "Focus",
+      icon: <FocusIcon />,
+    },
+    {
+      id: "growth",
+      label: "Growth",
+      icon: <GrowthIcon />,
+    },
+  ] satisfies ReadonlyArray<QuickIconItem>;
+
+  const quickSubmenuIcons =
+    activeDomain === "trading"
+      ? tradingQuickIcons
+      : activeDomain === "motivation"
+      ? motivationQuickIcons
+      : sectionQuickIcons;
 
   const sortForPicker = (list: Note[]) =>
     [...list].sort((a, b) => {
@@ -750,26 +1466,13 @@ export default function NotesClient({
 
   const onQuickIconClick = (item: QuickIconItem) => {
     setQuery("");
-    setActiveChapterId(null);
     setActiveLevel("all");
-
-    const next =
-      item.kind === "section"
-        ? sortForPicker(
-            domainNotes.filter((note) => note.section === item.id)
-          )[0]
-        : sortForPicker(
-            domainNotes.filter((note) => note.tags.includes(item.tag))
-          )[0];
-
-    if (item.kind === "section") {
-      setActiveTag(null);
-      setActiveSection(item.id);
-    } else {
-      setActiveSection("all");
-      setActiveTag(item.tag);
-    }
-
+    setActiveSection(item.id);
+    const next = sortForPicker(
+      domainNotes.filter((note) => note.section === item.id)
+    )[0];
+    const nextTree = buildTreeForSection(nodes, activeDomain, item.id);
+    setSelectedTreeNodeId(next?.id ?? nextTree.roots[0]?.id ?? null);
     setActiveNoteId(next?.id ?? null);
   };
 
@@ -822,29 +1525,6 @@ export default function NotesClient({
     [filtered]
   );
 
-  const sidebarGroups = useMemo(
-    () => outline.filter((g) => g.domain === activeDomain),
-    [outline, activeDomain]
-  );
-
-  const [collapsedChapters, setCollapsedChapters] = useState<
-    Record<string, boolean>
-  >({});
-
-  useEffect(() => {
-    setCollapsedChapters((prev) => {
-      const next = { ...prev };
-      let changed = false;
-      for (const group of sidebarGroups) {
-        if (next[group.id] === undefined) {
-          next[group.id] = true;
-          changed = true;
-        }
-      }
-      return changed ? next : prev;
-    });
-  }, [sidebarGroups]);
-
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
@@ -858,6 +1538,99 @@ export default function NotesClient({
       window.removeEventListener("scroll", onScroll);
     };
   }, []);
+
+  const selectedTreeNode = selectedTreeNodeId
+    ? tree.nodeById.get(selectedTreeNodeId) ?? null
+    : null;
+  const createParentId =
+    selectedTreeNode?.kind === "folder"
+      ? selectedTreeNode.id
+      : selectedTreeNode?.parentId ?? null;
+
+  const renderTreeNodes = (
+    items: TreeNode[],
+    mobile: boolean,
+    depth = 0
+  ): ReactNode =>
+    items.map((item) => {
+      const isFolder = item.kind === "folder";
+      const isExpanded = isFolder ? expandedFolders[item.id] !== false : false;
+      const isSelected = selectedTreeNodeId === item.id;
+      const isActiveNoteItem = activeNoteId === item.id;
+      const matchesFilter = item.kind === "note" ? filteredIds.has(item.id) : true;
+      const dimClass = queryNormalized && !matchesFilter ? "opacity-60" : "";
+      const showDraft = item.kind === "note" && initialIsAdmin && item.isPublished === false;
+      const showLocked = item.kind === "note" && isNoteLocked(item.id);
+
+      return (
+        <div key={item.id} className="space-y-1.5">
+          <button
+            type="button"
+            onClick={() => {
+              if (isFolder) {
+                setSelectedTreeNodeId(item.id);
+                setExpandedFolders((prev) => ({
+                  ...prev,
+                  [item.id]: !(prev[item.id] !== false),
+                }));
+                return;
+              }
+
+              clearFilters();
+              setSelectedTreeNodeId(item.id);
+              setActiveNoteId(item.id);
+              if (mobile) setSectionsOpen(false);
+            }}
+            className={[
+              "flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition duration-150 ease-out",
+              isSelected || isActiveNoteItem ? itemActiveClass : `${textBody} ${hoverRow}`,
+              dimClass,
+              focusRing,
+            ].join(" ")}
+            style={depth > 0 ? { paddingLeft: `${depth * 16 + 12}px` } : undefined}
+          >
+            <span className="truncate font-medium">
+              {stripSectionPrefixFromTitle(item.title, item.section)}
+            </span>
+            {isFolder ? (
+              <span
+                className={`ml-3 inline-flex h-8 w-8 items-center justify-center rounded-md transition-transform ${
+                  isExpanded ? "rotate-0" : "-rotate-90"
+                }`}
+                aria-hidden="true"
+              >
+                ▼
+              </span>
+            ) : showDraft || showLocked ? (
+              <span className="ml-2 flex items-center gap-2">
+                {showDraft ? (
+                  <span
+                    className={[
+                      "rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em]",
+                      isDark
+                        ? "border-slate-700/80 bg-slate-900 text-slate-200"
+                        : "border-slate-300 bg-white text-slate-700",
+                    ].join(" ")}
+                  >
+                    Draft
+                  </span>
+                ) : null}
+                {showLocked ? (
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-400">
+                    Locked
+                  </span>
+                ) : null}
+              </span>
+            ) : null}
+          </button>
+          {isFolder && isExpanded && item.children.length > 0 ? (
+            <div className={`space-y-1 border-l border-dashed ${borderDashedSoft}`}>
+              {renderTreeNodes(item.children, mobile, depth + 1)}
+            </div>
+          ) : null}
+        </div>
+      );
+    });
 
   return (
     <div className={`min-h-screen relative scroll-smooth ${bgClass}`}>
@@ -898,6 +1671,77 @@ export default function NotesClient({
               />
             </Link>
             <div className="flex items-center gap-3">
+              {!initialIsAuthenticated ? (
+                <Link
+                  href={loginHref}
+                  className={[
+                    pillButton,
+                    isDark
+                      ? "border-slate-800/80 bg-slate-900 text-slate-200 hover:border-sky-500/60"
+                      : "border-slate-200 bg-white text-slate-700 hover:border-sky-500/60",
+                    "shadow-sm shadow-slate-900/10 hover:brightness-105",
+                    focusRing,
+                  ].join(" ")}
+                >
+                  Sign in
+                </Link>
+              ) : (
+                <>
+                  {initialIsAdmin ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={openAdminNew}
+                        className={[
+                          pillButton,
+                          isDark
+                            ? "border-slate-800/80 bg-slate-900 text-slate-200 hover:border-sky-500/60"
+                            : "border-slate-200 bg-white text-slate-700 hover:border-sky-500/60",
+                          "shadow-sm shadow-slate-900/10 hover:brightness-105",
+                          focusRing,
+                        ].join(" ")}
+                      >
+                        New
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTrashDrawerOpen(true)}
+                        className={[
+                          pillButton,
+                          isDark
+                            ? "border-slate-800/80 bg-slate-900 text-slate-200 hover:border-sky-500/60"
+                            : "border-slate-200 bg-white text-slate-700 hover:border-sky-500/60",
+                          "shadow-sm shadow-slate-900/10 hover:brightness-105",
+                          focusRing,
+                          "gap-2",
+                        ].join(" ")}
+                      >
+                        <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4">
+                          <path
+                            fill="currentColor"
+                            d="M9 3h6l1 2h5v2H3V5h5l1-2Zm1 7h2v9h-2v-9Zm4 0h2v9h-2v-9ZM6 10h2v9H6v-9Z"
+                          />
+                        </svg>
+                        Trash
+                      </button>
+                    </>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    className={[
+                      pillButton,
+                      isDark
+                        ? "border-slate-800/80 bg-slate-900 text-slate-200 hover:border-rose-500/60"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-rose-500/60",
+                      "shadow-sm shadow-slate-900/10 hover:brightness-105",
+                      focusRing,
+                    ].join(" ")}
+                  >
+                    Sign out
+                  </button>
+                </>
+              )}
               <div
                 ref={searchContainerRef}
                 className="relative w-40 sm:w-56 lg:w-64"
@@ -968,10 +1812,10 @@ export default function NotesClient({
                                   ?.label ?? note.section}
                               </span>
                               <span className="text-slate-500">•</span>
-                              <span>{note.chapterTitle}</span>
+                              <span>{note.chapterTitle ?? "Root"}</span>
                             </div>
                             <div className="mt-1 text-sm font-semibold text-slate-200">
-                              {note.title}
+                              {stripSectionPrefixFromTitle(note.title, note.section)}
                             </div>
                             <p className="mt-1 text-[11px] uppercase tracking-[0.15em] text-slate-500">
                               {snippets.length} match{snippets.length === 1 ? "" : "es"}
@@ -995,23 +1839,20 @@ export default function NotesClient({
                   </div>
                 )}
               </div>
-              <button
-                onClick={() => setTheme(isDark ? "light" : "dark")}
+	              <button
+	                onClick={() => setTheme(isDark ? "light" : "dark")}
                 className={[
                   pillButton,
                   isDark
                     ? "border-slate-800/80 bg-slate-900 text-slate-200 hover:border-sky-500/60"
                     : "border-slate-200 bg-white text-slate-700 hover:border-sky-500/60",
+                  "h-10 w-10 p-0 justify-center",
                   "shadow-sm shadow-slate-900/10 hover:brightness-105",
                   focusRing,
                 ].join(" ")}
                 aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
               >
-                <span
-                  className={`flex h-6 w-6 items-center justify-center rounded-full ${
-                    isDark ? "bg-slate-800" : "bg-slate-100"
-                  }`}
-                >
+                <span className="flex h-6 w-6 items-center justify-center">
                   {isDark ? (
                     <svg
                       aria-hidden="true"
@@ -1047,22 +1888,33 @@ export default function NotesClient({
                     </svg>
                   )}
                 </span>
-                <span className="hidden sm:inline">
-                  {isDark ? "Light mode" : "Dark mode"}
-                </span>
-              </button>
-            </div>
-          </div>
+		              </button>
+	            </div>
+	          </div>
 
-          <div className="flex w-full flex-col items-start gap-3 sm:gap-4">
+          <div className="flex w-full flex-col items-start gap-2 sm:gap-3">
+            {initialDataNotice ? (
+              <div
+                className={[
+                  "w-full rounded-2xl border px-4 py-3 text-sm leading-relaxed",
+                  isDark
+                    ? "border-amber-400/30 bg-amber-500/10 text-amber-100"
+                    : "border-amber-300 bg-amber-50 text-amber-900",
+                ].join(" ")}
+              >
+                {initialDataNotice}
+              </div>
+            ) : null}
             <div className="flex flex-wrap justify-start gap-2">
               {domains.map((d) => (
                 <button
                   key={d.id}
                   type="button"
                   onClick={() => {
-                    if (d.id === "trading") return;
                     setActiveDomain(d.id);
+                    setActiveSection(firstSectionForDomain(d.id));
+                    setActiveNoteId(null);
+                    setSelectedTreeNodeId(null);
                   }}
                   className={[
                     chip,
@@ -1076,7 +1928,7 @@ export default function NotesClient({
                   ].join(" ")}
                 >
                   {d.label}
-                  {d.id === "trading" && (
+                  {d.id === "trading" && !initialIsAdmin && (
                     <span
                       className={[
                         "ml-1 inline-flex items-center justify-center",
@@ -1099,25 +1951,6 @@ export default function NotesClient({
               ))}
             </div>
 
-            <figure
-              className={[
-                "relative w-full max-w-xl self-start rounded-2xl px-4 py-2 sm:px-4 sm:py-3 shadow-md backdrop-blur-sm",
-                surfaceElevated,
-                cardGradient,
-              ].join(" ")}
-            >
-              <p
-                className={`${textPrimary} text-left text-[11px] sm:text-xs md:text-sm font-medium`}
-              >
-                {quoteText}
-              </p>
-              <figcaption
-                className={`${textMuted} mt-1.5 text-[10px] sm:text-[11px] text-right`}
-              >
-                — {quoteAuthor}
-              </figcaption>
-            </figure>
-
             <div
               className={[
                 "w-full max-w-7xl pb-1",
@@ -1126,19 +1959,10 @@ export default function NotesClient({
               ].join(" ")}
             >
               <div className="flex w-max flex-nowrap items-center gap-6 sm:gap-7 sm:w-full sm:flex-wrap">
-                {sectionQuickIcons.map((item) => {
-                  const key =
-                    item.kind === "section"
-                      ? `section:${item.id}`
-                      : `tag:${item.tag}`;
-                  const isAvailable =
-                    item.kind === "section"
-                      ? availableSections.has(item.id)
-                      : availableTags.has(item.tag);
-                  const isActive =
-                    item.kind === "section"
-                      ? activeSection === item.id
-                      : activeTag === item.tag;
+                {quickSubmenuIcons.map((item) => {
+                  const key = `section:${item.id}`;
+                  const isAvailable = availableSections.has(item.id);
+                  const isActive = activeSection === item.id;
                   const base = [
                     "group relative inline-flex items-center justify-center transition duration-150 ease-out",
                     isDark ? "text-white" : "text-black",
@@ -1153,9 +1977,7 @@ export default function NotesClient({
                     <button
                       key={key}
                       type="button"
-                      onClick={() => {
-                        onQuickIconClick(item);
-                      }}
+                      onClick={() => onQuickIconClick(item)}
                       className={[...base, stateClass, availabilityClass].join(
                         " "
                       )}
@@ -1189,15 +2011,12 @@ export default function NotesClient({
 
       <main
         id="notes-main"
-        className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-4 px-6 py-10 lg:grid-cols-[300px_minmax(0,1fr)]"
+        className={`mx-auto grid w-full max-w-7xl grid-cols-1 gap-4 px-6 py-10 ${
+          showSidebar ? "lg:grid-cols-[300px_minmax(0,1fr)]" : "lg:grid-cols-1"
+        }`}
       >
         {/* Left tree */}
-        <aside
-          className={[
-            "hidden lg:block",
-            hasAnyNotes ? "" : "invisible pointer-events-none",
-          ].join(" ")}
-        >
+        <aside className={showSidebar ? "hidden lg:block" : "hidden"}>
           <div
             className={[
               "sticky top-[120px] space-y-4 rounded-2xl p-4 shadow-lg",
@@ -1205,93 +2024,17 @@ export default function NotesClient({
               cardGradient,
             ].join(" ")}
           >
-            <h3 className={`${headingSm} ${textSubtle}`}>Sections</h3>
+            <h3 className={`${headingSm} ${textSubtle}`}>
+              {sectionLabelForId(activeSection)}
+            </h3>
             <div className="space-y-3 text-sm">
-              {sidebarGroups.map((group) => {
-                const isCollapsed = collapsedChapters[group.id] ?? false;
-                const groupHasActive = group.items.some(
-                  (item) => item.id === activeNoteId
-                );
-                const panelId = `notes-chapter-${group.id}`;
-                const isActiveChapter =
-                  activeChapterId === group.id && !isCollapsed;
-                return (
-                  <div key={group.id} className="space-y-2">
-                    <button
-                      type="button"
-                      aria-controls={panelId}
-                      aria-expanded={!isCollapsed}
-                      onClick={() => {
-                        const nextCollapsed = !isCollapsed;
-                        setCollapsedChapters((prev) => ({
-                          ...prev,
-                          [group.id]: nextCollapsed,
-                        }));
-
-                        if (nextCollapsed) {
-                          if (activeChapterId === group.id) {
-                            setActiveChapterId(null);
-                          }
-                          return;
-                        }
-
-                        setActiveChapterId(group.id);
-                        if (!activeNoteId || !groupHasActive) {
-                          const first = group.items[0];
-                          setActiveNoteId(first?.id ?? null);
-                        }
-                      }}
-                      className={[
-                        "flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition duration-150 ease-out",
-                        isActiveChapter ? chapterActiveClass : `${textBody} ${hoverRow}`,
-                        focusRing,
-                      ].join(" ")}
-                    >
-                      <span className="font-semibold">{group.label}</span>
-                      <span
-                        className={`inline-flex h-8 w-8 items-center justify-center rounded-md transition-transform ${
-                          isCollapsed ? "-rotate-90" : "rotate-0"
-                        }`}
-                        aria-hidden="true"
-                      >
-                        ▼
-                      </span>
-                    </button>
-                    {!isCollapsed && (
-                      <div
-                        id={panelId}
-                        className={`space-y-1.5 border-l border-dashed pl-3 text-xs ${borderDashedSoft} ${textMuted}`}
-                      >
-                        {group.items.map((item) => {
-                          const isActive = activeNoteId === item.id;
-                          const matchesFilter = filteredIds.has(item.id);
-                          const dimClass =
-                            queryNormalized || matchesFilter ? "" : "opacity-60";
-                          return (
-                            <button
-                              key={item.id}
-                          onClick={() => {
-                            clearFilters();
-                            setActiveChapterId(group.id);
-                            setActiveNoteId(item.id);
-                          }}
-		                              className={[
-		                                "flex w-full items-center justify-between rounded-md px-2.5 py-1.5 transition duration-150 ease-out focus:outline-none focus:ring-2 focus:ring-sky-500/60",
-		                                isActive
-		                                  ? itemActiveClass
-		                                  : hoverRow,
-		                                dimClass,
-		                              ].join(" ")}
-	                            >
-                              <span className="truncate">{item.label}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              {tree.roots.length > 0 ? (
+                renderTreeNodes(tree.roots, false)
+              ) : (
+                <p className={`rounded-xl border border-dashed px-3 py-3 text-sm ${textMuted} ${borderSoft}`}>
+                  No folders or notes in this topic yet.
+                </p>
+              )}
             </div>
           </div>
         </aside>
@@ -1314,8 +2057,81 @@ export default function NotesClient({
               Browse sections
             </button>
           </div>
-	          {activeNote ? (
-	            <article
+          {isTradingLocked ? (
+            <div
+              className={[
+                "w-full rounded-2xl border p-7 shadow-xl",
+                surfaceElevated,
+                cardGradient,
+              ].join(" ")}
+            >
+              <div className="mb-6 space-y-3">
+                <h3 className={`text-xl font-semibold ${textPrimary}`}>
+                  Trading notes are admin-only
+                </h3>
+                <p className={`text-sm ${textMuted}`}>
+                  Software Programming and Motivation notes are public. Stock
+                  Trading notes are only visible to the site owner.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {!initialIsAuthenticated ? (
+                  <Link
+                    href={tradingLoginHref}
+                    className={[
+                      pillButton,
+                      isDark
+                        ? "border-slate-800 bg-slate-900 text-slate-200 hover:border-sky-500/60"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-sky-500/60",
+                      "shadow-sm",
+                      focusRing,
+                    ].join(" ")}
+                  >
+                    Sign in
+                  </Link>
+                ) : (
+                  <span className={`text-sm ${textMuted}`}>
+                    You are signed in, but this account has no admin access.
+                  </span>
+                )}
+
+              </div>
+            </div>
+          ) : activeNote ? (
+              activeNoteLocked ? (
+                <div
+                  className={[
+                    "mx-auto max-w-[920px] rounded-2xl border p-7 shadow-xl",
+                    surfaceElevated,
+                    cardGradient,
+                  ].join(" ")}
+                >
+                  <div className="mb-6 space-y-3">
+                    <h3 className={`text-xl font-semibold ${textPrimary}`}>
+                      {stripSectionPrefixFromTitle(
+                        activeNote.title,
+                        activeNote.section
+                      )}
+                    </h3>
+                    <p className={`text-sm ${textMuted}`}>
+                      Sign in to view this Stock Trading note.
+                    </p>
+                    <div className="h-4 w-2/3 rounded bg-white/10" />
+                    <div className="h-4 w-full rounded bg-white/10" />
+                    <div className="h-4 w-11/12 rounded bg-white/10" />
+                    <div className="h-4 w-4/5 rounded bg-white/10" />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowLoginModal(true)}
+                    className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-200"
+                  >
+                    Login to unlock
+                  </button>
+                </div>
+              ) : (
+		            <article
               className={[
                 "mx-auto max-w-[920px] rounded-2xl border p-7 shadow-xl",
                 surfaceElevated,
@@ -1323,9 +2139,74 @@ export default function NotesClient({
               ].join(" ")}
               style={mdxVars}
 	            >
-		              <div className={`${bodyBase} text-[15px]`}>{children}</div>
-		            </article>
-		          ) : hasAnyNotes && filtersActive ? (
+                  {adminActionError ? (
+                    <p className="mb-5 rounded-xl border border-red-400/40 bg-red-500/10 px-3 py-2 text-sm text-red-100">
+                      {adminActionError}
+                    </p>
+                  ) : null}
+                  {adminActionMessage ? (
+                    <p className="mb-5 rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-100">
+                      {adminActionMessage}
+                    </p>
+                  ) : null}
+
+                  <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <h1 className={`text-2xl font-semibold ${textPrimary}`}>
+                        {stripSectionPrefixFromTitle(
+                          activeNote.title,
+                          activeNote.section
+                        )}
+                      </h1>
+                    </div>
+                    {initialIsAdmin ? (
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => openAdminEdit(activeNote.id)}
+                          className={[
+                            pillButton,
+                            isDark
+                              ? "border-slate-800 bg-slate-900 text-slate-200 hover:border-slate-700"
+                              : "border-slate-200 bg-white text-slate-700 hover:border-slate-300",
+                            "shadow-sm",
+                            focusRing,
+                          ].join(" ")}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleDeleteActiveNote}
+                          disabled={adminDeletePending}
+                          className={[
+                            pillButton,
+                            isDark
+                              ? "border-red-500/40 bg-red-500/10 text-red-100 hover:bg-red-500/20"
+                              : "border-red-500/40 bg-red-50 text-red-700 hover:bg-red-100",
+                            "shadow-sm",
+                            focusRing,
+                          ].join(" ")}
+                        >
+                          {adminDeletePending ? "Moving..." : "Move to Trash"}
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+
+		              <div className={`${bodyBase} text-[15px]`}>
+                    {typeof activeLiveMarkdown === "string" ? (
+                      <MdxPreviewClient
+                        source={activeLiveMarkdown}
+                        suppressFirstHeading
+                      />
+                    ) : (
+                      children
+                    )}
+                  </div>
+			            </article>
+              )
+			          ) : hasAnyNotes && filtersActive ? (
                 <div
                   className={`mx-auto max-w-[920px] rounded-xl border border-dashed p-8 text-center ${borderSoft} ${textMuted}`}
                 >
@@ -1342,7 +2223,13 @@ export default function NotesClient({
                     Clear filters
                   </button>
                 </div>
-              ) : (
+              ) : sectionNodes.length > 0 ? (
+	            <div
+	              className={`mx-auto max-w-[920px] rounded-xl border border-dashed p-8 text-center ${borderSoft} ${textMuted}`}
+	            >
+	              Select a note from the left tree.
+            </div>
+          ) : (
 	            <div
 	              className={`mx-auto max-w-[920px] rounded-xl border border-dashed p-8 text-center ${borderSoft} ${textMuted}`}
 	            >
@@ -1373,99 +2260,52 @@ export default function NotesClient({
               </button>
 	            </div>
 	            <div className="max-h-[60vh] space-y-3 overflow-y-auto text-sm">
-	              {sidebarGroups.map((group) => {
-	                const isCollapsed = collapsedChapters[group.id] ?? false;
-	                const groupHasActive = group.items.some(
-	                  (item) => item.id === activeNoteId
-	                );
-	                const panelId = `notes-modal-chapter-${group.id}`;
-	                const isActiveChapter = activeChapterId === group.id && !isCollapsed;
-	                return (
-	                  <div key={group.id} className="space-y-2">
-	                    <button
-	                      type="button"
-	                      aria-controls={panelId}
-	                      aria-expanded={!isCollapsed}
-	                      onClick={() => {
-	                        const nextCollapsed = !isCollapsed;
-	                        setCollapsedChapters((prev) => ({
-	                          ...prev,
-	                          [group.id]: nextCollapsed,
-	                        }));
-
-	                        if (nextCollapsed) {
-	                          if (activeChapterId === group.id) {
-	                            setActiveChapterId(null);
-	                          }
-	                          return;
-	                        }
-
-	                        setActiveChapterId(group.id);
-	                        if (!activeNoteId || !groupHasActive) {
-	                          const first = group.items[0];
-	                          setActiveNoteId(first?.id ?? null);
-	                        }
-	                      }}
-	                      className={[
-	                        "flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-left transition duration-150 ease-out",
-	                        isActiveChapter ? chapterActiveClass : `${hoverRow} ${textBody}`,
-	                        focusRing,
-	                      ].join(" ")}
-	                    >
-	                      <span>{group.label}</span>
-	                      <span
-	                        className={`inline-flex h-8 w-8 items-center justify-center rounded-md transition-transform ${
-	                          isCollapsed ? "-rotate-90" : "rotate-0"
-	                        }`}
-	                        aria-hidden="true"
-	                      >
-	                        ▼
-	                      </span>
-	                    </button>
-                    {!isCollapsed && group.items.length > 0 && (
-                      <div
-                        id={panelId}
-                        className={`space-y-1 border-l border-dashed pl-3 text-xs ${borderDashedSoft} ${textMuted}`}
-                      >
-	                        {group.items.map((item) => {
-	                          const isActive = activeNoteId === item.id;
-	                          const matchesFilter = filteredIds.has(item.id);
-	                          const dimClass =
-	                            queryNormalized || matchesFilter ? "" : "opacity-60";
-	                          return (
-	                            <button
-	                              key={item.id}
-	                              type="button"
-	                              onClick={() => {
-	                                clearFilters();
-	                                setActiveChapterId(group.id);
-	                                setActiveNoteId(item.id);
-	                                setSectionsOpen(false);
-	                              }}
-                              className={[
-	                                "flex w-full items-center justify-between rounded-md px-2 py-1 text-left transition duration-150 ease-out",
-	                                isActive
-	                                  ? itemActiveClass
-	                                  : hoverRow,
-	                                focusRing,
-	                                dimClass,
-	                              ].join(" ")}
-	                            >
-                              <span className="truncate">{item.label}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              {tree.roots.length > 0 ? (
+                renderTreeNodes(tree.roots, true)
+              ) : (
+                <p className={`rounded-xl border border-dashed px-3 py-3 text-sm ${textMuted} ${borderSoft}`}>
+                  No folders or notes in this topic yet.
+                </p>
+              )}
             </div>
           </div>
         </div>
       )}
 
-      {showScrollTop && (
+      {initialIsAdmin ? (
+        <AdminNoteDrawer
+          key={`admin-drawer-${adminDrawerSessionKey}`}
+          open={adminDrawerOpen}
+          mode={adminDrawerMode}
+          noteId={adminDrawerNoteId}
+          nodes={nodes}
+          defaultDomain={activeDomain}
+          defaultSection={activeSection}
+          defaultParentId={createParentId}
+          isDark={isDark}
+          mdxVars={mdxVars}
+          onClose={() => {
+            setAdminDrawerOpen(false);
+            setAdminDrawerNoteId(null);
+            router.refresh();
+          }}
+          onSaved={handleAdminSaved}
+          onPersisted={handleAdminPersisted}
+          onDeleted={handleAdminDeleted}
+        />
+      ) : null}
+
+      {initialIsAdmin ? (
+        <TrashDrawer
+          open={trashDrawerOpen}
+          isDark={isDark}
+          onClose={() => setTrashDrawerOpen(false)}
+          onRestored={handleAdminRestored}
+          onHardDeleted={handleAdminHardDeleted}
+        />
+      ) : null}
+
+	      {showScrollTop && (
         <button
           type="button"
           aria-label="Back to top"
@@ -1492,6 +2332,63 @@ export default function NotesClient({
             Top
           </span>
         </button>
+	      )}
+
+      {showLoginModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-white/15 bg-[#0c111a] p-6 shadow-2xl">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-semibold text-white">
+                  Unlock Stock Trading notes
+                </h3>
+                <p className="mt-1 text-sm text-white/70">
+                  Software Programming and Motivation notes stay open for
+                  everyone.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowLoginModal(false)}
+                className="rounded-lg p-1 text-white/60 transition hover:bg-white/10 hover:text-white"
+                aria-label="Close login dialog"
+              >
+                X
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {initialAuthAvailable ? (
+                <>
+                  <p className="pt-1 text-center text-xs text-white/45">Or sign in using</p>
+                  <div className="flex items-center justify-center gap-4">
+                    <a
+                      href={`/api/auth/signin?provider=google&next=${encodeURIComponent(loginNext)}`}
+                      className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white text-slate-900 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-white/40"
+                      title="Sign in with Google"
+                      aria-label="Sign in with Google"
+                    >
+                      <GoogleLogo />
+                    </a>
+                    <a
+                      href={`/api/auth/signin?provider=github&next=${encodeURIComponent(loginNext)}`}
+                      className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-[#111827] text-white transition hover:bg-[#1f2937] focus:outline-none focus:ring-2 focus:ring-white/40"
+                      title="Sign in with Github"
+                      aria-label="Sign in with Github"
+                    >
+                      <GitHubLogo />
+                    </a>
+                  </div>
+                </>
+              ) : (
+                <div className="rounded-2xl border border-amber-400/25 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+                  Sign-in is temporarily unavailable because the Supabase auth
+                  backend cannot be reached.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* <footer

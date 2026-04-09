@@ -169,13 +169,13 @@ const getCategoryColor = (category: string) => {
 };
 
 const GalleryCard = ({ image }: { image: GalleryImage }) => (
-  <div className="group relative bg-gradient-to-br from-gray-800/60 to-gray-900/80 border border-gray-700/30 rounded-xl overflow-hidden mb-6 hover:scale-[1.02] transition-all duration-500 shadow-lg hover:shadow-2xl hover:shadow-blue-500/10">
+  <div className="group relative bg-gradient-to-br from-gray-800/60 to-gray-900/80 border border-gray-700/30 rounded-xl overflow-hidden mb-6 transition-all duration-500 shadow-lg hover:shadow-2xl hover:shadow-blue-500/10">
     <div className="relative aspect-square bg-gradient-to-br from-gray-700 to-gray-900 overflow-hidden">
       <Image
         src={image.src}
         alt={image.alt}
         fill
-        className="object-cover transition-transform duration-700 group-hover:scale-110"
+        className="object-cover transition-transform duration-700"
         sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
         onError={(e) => {
           const target = e.currentTarget;
@@ -364,7 +364,7 @@ export default function ScrollingGallery() {
   }, []);
 
   return (
-    <section className="py-20 px-6 bg-black">
+    <section className="pt-32 md:pt-36 pb-20 px-6 bg-black">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-20">
           <h2 className="text-4xl md:text-5xl font-bold text-center mb-6 gradient-text leading-tight tracking-tight">

@@ -1,4 +1,0 @@
-# Creating Methods
-
-Coming soon.
-
