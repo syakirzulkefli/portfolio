@@ -2,6 +2,8 @@ import LoginClient from "./LoginClient";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
+export const runtime = "edge";
+
 const normalizeEnvValue = (value: string | undefined) => {
   if (!value) return null;
   const trimmed = value.trim();
