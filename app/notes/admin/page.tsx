@@ -20,10 +20,10 @@ export default async function NotesAdminPage() {
           <div className="mx-auto w-full max-w-xl rounded-2xl border border-white/15 bg-white/5 p-6 shadow-2xl">
             <h1 className="text-2xl font-semibold">Notes admin access denied</h1>
             <p className="mt-3 text-sm text-white/70">
-              Your account is signed in but not registered in `public.admins`.
+              Only the owner account can access notes admin.
             </p>
             <p className="mt-3 text-xs text-white/50">
-              Ask project owner to add your `auth.uid()` to `public.admins`.
+              Make sure the owner email is allowed and the account exists in `public.admins`.
             </p>
             <div className="mt-6">
               <Link

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   clearSessionCookies,
-  ensureApprovedUser,
+  ensureOwnerAccess,
   getSupabaseConfig,
   setSessionCookies,
 } from "../shared";
@@ -30,10 +30,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "config" }, { status: 500 });
   }
 
-  const approval = await ensureApprovedUser(config, body.access_token);
-  if (!approval.ok) {
-    const status = approval.error === "approval_required" ? 403 : 401;
-    return NextResponse.json({ ok: false, error: approval.error }, { status });
+  const access = await ensureOwnerAccess(config, body.access_token);
+  if (!access.ok) {
+    const status = access.error === "unauthenticated" ? 401 : 403;
+    return NextResponse.json({ ok: false, error: access.error }, { status });
   }
 
   const response = NextResponse.json({ ok: true });

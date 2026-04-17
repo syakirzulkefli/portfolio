@@ -272,7 +272,7 @@ create policy "public can read published public notes"
 on public.notes
 for select
 to anon, authenticated
-using (is_published = true and domain <> 'trading' and deleted_at is null);
+using (is_published = true and domain = 'software' and deleted_at is null);
 
 drop policy if exists "admins can read all notes" on public.notes;
 create policy "admins can read all notes"

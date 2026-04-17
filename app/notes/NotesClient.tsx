@@ -6,8 +6,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import AdminNoteDrawer, { type AdminNoteRecord } from "./AdminNoteDrawer";
+import NoteContent from "./NoteContent";
 import TrashDrawer from "./TrashDrawer";
-import MdxPreviewClient from "./mdx/MdxPreviewClient";
+import { requiresNotesOwnerAccess } from "./access";
 import {
   firstSectionForDomain,
   DomainId,
@@ -162,29 +163,6 @@ const buildTreeForSection = (
     ancestorIdsForNode,
     scoped,
   };
-};
-
-const collectDescendantIds = (nodes: NoteNode[], rootId: string) => {
-  const childrenByParentId = new Map<string, string[]>();
-  for (const node of nodes) {
-    if (!node.parentId) continue;
-    const siblings = childrenByParentId.get(node.parentId) ?? [];
-    siblings.push(node.id);
-    childrenByParentId.set(node.parentId, siblings);
-  }
-
-  const ids = new Set<string>([rootId]);
-  const stack = [rootId];
-  while (stack.length > 0) {
-    const current = stack.pop() ?? "";
-    const children = childrenByParentId.get(current) ?? [];
-    for (const childId of children) {
-      if (ids.has(childId)) continue;
-      ids.add(childId);
-      stack.push(childId);
-    }
-  }
-  return ids;
 };
 
 const compareNotesForList = (a: Note, b: Note) => {
@@ -816,7 +794,7 @@ export default function NotesClient({
   const isNoteLocked = (noteId: string) => {
     if (initialIsAdmin) return false;
     const note = notes.find((item) => item.id === noteId);
-    return note?.domain === "trading";
+    return note ? requiresNotesOwnerAccess(note.domain) : false;
   };
 
   const filtered = useMemo(() => {
@@ -939,6 +917,13 @@ export default function NotesClient({
     const domainChanged = lastDomainRef.current !== activeDomain;
     lastDomainRef.current = activeDomain;
 
+    const selectedNode =
+      selectedTreeNodeId ? tree.nodeById.get(selectedTreeNodeId) ?? null : null;
+    if (selectedNode?.kind === "folder" && !domainChanged) {
+      setActiveNoteId(null);
+      return;
+    }
+
     const hasActiveInSection =
       !!activeNoteId && sectionNotes.some((note) => note.id === activeNoteId);
     const stored = window.localStorage.getItem(
@@ -963,14 +948,14 @@ export default function NotesClient({
         setSelectedTreeNodeId(null);
       }
     }
-  }, [activeDomain, sectionNotes, filtered, activeNoteId, queryNormalized]);
+  }, [activeDomain, sectionNotes, filtered, activeNoteId, queryNormalized, selectedTreeNodeId, tree]);
 
   const activeNote =
     filtered.find((note) => note.id === activeNoteId) || filtered[0] || null;
   const activeNoteLocked = !!activeNote && isNoteLocked(activeNote.id);
-  const isTradingLocked = activeDomain === "trading" && !initialIsAdmin;
+  const isDomainLocked = requiresNotesOwnerAccess(activeDomain) && !initialIsAdmin;
   const hasAnyNotes = sectionNotes.length > 0;
-  const showSidebar = sectionNodes.length > 0 && !isTradingLocked;
+  const showSidebar = sectionNodes.length > 0 && !isDomainLocked;
   const loginNextParams = new URLSearchParams();
   loginNextParams.set("domain", activeDomain);
   if (activeNote?.id) loginNextParams.set("note", activeNote.id);
@@ -983,7 +968,7 @@ export default function NotesClient({
     return `/login?${params.toString()}`;
   };
   const loginHref = loginHrefFor(loginNext);
-  const tradingLoginHref = loginHrefFor("/notes?domain=trading");
+  const ownerLoginHref = loginHrefFor(loginNext);
 
   const handleSignOut = async () => {
     await fetch("/api/auth/signout", { method: "POST" });
@@ -1101,14 +1086,33 @@ export default function NotesClient({
     setAdminDrawerOpen(false);
     setAdminActionError(null);
     setAdminActionMessage("Moved to Trash.");
-
-    const deletedIds = collectDescendantIds(nodes, deletedId);
+    const deletedNode = nodes.find((item) => item.id === deletedId) ?? null;
+    const nextParentId = deletedNode?.parentId ?? null;
     let nextNoteId: string | null = null;
     let nextDomain: DomainId | null = null;
 
-    setNodes((prev) => prev.filter((item) => !deletedIds.has(item.id)));
+    setNodes((prev) =>
+      prev
+        .filter((item) => item.id !== deletedId)
+        .map((item) =>
+          item.parentId === deletedId ? { ...item, parentId: nextParentId } : item
+        )
+    );
     setNotes((prev) => {
-      const remaining = prev.filter((item) => !deletedIds.has(item.id));
+      const remaining = prev
+        .filter((item) => item.id !== deletedId)
+        .map((item) =>
+          item.parentId === deletedId
+            ? {
+                ...item,
+                parentId: nextParentId,
+                chapterId: nextParentId,
+                chapterTitle: nextParentId
+                  ? nodes.find((node) => node.id === nextParentId)?.title ?? null
+                  : null,
+              }
+            : item
+        );
       const preferred =
         remaining.find(
           (item) => item.domain === activeDomain && item.section === activeSection
@@ -1141,16 +1145,35 @@ export default function NotesClient({
   const handleAdminHardDeleted = (noteId: string) => {
     setAdminActionError(null);
     setAdminActionMessage("Deleted forever.");
-    const deletedIds = collectDescendantIds(nodes, noteId);
-    setNodes((prev) => prev.filter((item) => !deletedIds.has(item.id)));
-    setNotes((prev) => prev.filter((item) => !deletedIds.has(item.id)));
+    const deletedNode = nodes.find((item) => item.id === noteId) ?? null;
+    const nextParentId = deletedNode?.parentId ?? null;
+    setNodes((prev) =>
+      prev
+        .filter((item) => item.id !== noteId)
+        .map((item) =>
+          item.parentId === noteId ? { ...item, parentId: nextParentId } : item
+        )
+    );
+    setNotes((prev) =>
+      prev
+        .filter((item) => item.id !== noteId)
+        .map((item) =>
+          item.parentId === noteId
+            ? {
+                ...item,
+                parentId: nextParentId,
+                chapterId: nextParentId,
+                chapterTitle: nextParentId
+                  ? nodes.find((node) => node.id === nextParentId)?.title ?? null
+                  : null,
+              }
+            : item
+        )
+    );
     setLiveMarkdownById((prev) => {
-      const hasAny = [...deletedIds].some((id) => id in prev);
-      if (!hasAny) return prev;
+      if (!(noteId in prev)) return prev;
       const next = { ...prev };
-      for (const id of deletedIds) {
-        delete next[id];
-      }
+      delete next[noteId];
       return next;
     });
     router.refresh();
@@ -1186,6 +1209,12 @@ export default function NotesClient({
   };
 
   useEffect(() => {
+    const selectedNode =
+      selectedTreeNodeId ? tree.nodeById.get(selectedTreeNodeId) ?? null : null;
+    if (selectedNode?.kind === "folder") {
+      setActiveNoteId(null);
+      return;
+    }
     if (queryNormalized) return;
     if (filtersActive && filtered[0] && activeNoteId !== filtered[0].id) {
       setActiveNoteId(filtered[0].id);
@@ -1195,7 +1224,7 @@ export default function NotesClient({
     if (activeNote) return;
     setActiveNoteId(filtered[0]?.id ?? null);
     setSelectedTreeNodeId(filtered[0]?.id ?? null);
-  }, [filtered, activeNote, filtersActive, activeNoteId, queryNormalized]);
+  }, [filtered, activeNote, filtersActive, activeNoteId, queryNormalized, selectedTreeNodeId, tree]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1542,6 +1571,8 @@ export default function NotesClient({
   const selectedTreeNode = selectedTreeNodeId
     ? tree.nodeById.get(selectedTreeNodeId) ?? null
     : null;
+  const selectedFolderNode =
+    selectedTreeNode?.kind === "folder" ? selectedTreeNode : null;
   const createParentId =
     selectedTreeNode?.kind === "folder"
       ? selectedTreeNode.id
@@ -1569,6 +1600,7 @@ export default function NotesClient({
             onClick={() => {
               if (isFolder) {
                 setSelectedTreeNodeId(item.id);
+                setActiveNoteId(null);
                 setExpandedFolders((prev) => ({
                   ...prev,
                   [item.id]: !(prev[item.id] !== false),
@@ -1928,7 +1960,7 @@ export default function NotesClient({
                   ].join(" ")}
                 >
                   {d.label}
-                  {d.id === "trading" && !initialIsAdmin && (
+                  {requiresNotesOwnerAccess(d.id) && !initialIsAdmin && (
                     <span
                       className={[
                         "ml-1 inline-flex items-center justify-center",
@@ -2057,7 +2089,7 @@ export default function NotesClient({
               Browse sections
             </button>
           </div>
-          {isTradingLocked ? (
+          {isDomainLocked ? (
             <div
               className={[
                 "w-full rounded-2xl border p-7 shadow-xl",
@@ -2067,18 +2099,14 @@ export default function NotesClient({
             >
               <div className="mb-6 space-y-3">
                 <h3 className={`text-xl font-semibold ${textPrimary}`}>
-                  Trading notes are admin-only
+                  Locked. Personal use only.
                 </h3>
-                <p className={`text-sm ${textMuted}`}>
-                  Software Programming and Motivation notes are public. Stock
-                  Trading notes are only visible to the site owner.
-                </p>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
                 {!initialIsAuthenticated ? (
                   <Link
-                    href={tradingLoginHref}
+                    href={ownerLoginHref}
                     className={[
                       pillButton,
                       isDark
@@ -2092,12 +2120,67 @@ export default function NotesClient({
                   </Link>
                 ) : (
                   <span className={`text-sm ${textMuted}`}>
-                    You are signed in, but this account has no admin access.
+                    You are signed in, but this account is not the site owner.
                   </span>
                 )}
 
               </div>
             </div>
+          ) : selectedFolderNode ? (
+              <div
+                className={[
+                  "mx-auto max-w-[920px] rounded-2xl border p-7 shadow-xl",
+                  surfaceElevated,
+                  cardGradient,
+                ].join(" ")}
+              >
+                {adminActionError ? (
+                  <p className="mb-5 rounded-xl border border-red-400/40 bg-red-500/10 px-3 py-2 text-sm text-red-100">
+                    {adminActionError}
+                  </p>
+                ) : null}
+                {adminActionMessage ? (
+                  <p className="mb-5 rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-100">
+                    {adminActionMessage}
+                  </p>
+                ) : null}
+
+                <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className={`text-xs font-semibold uppercase tracking-[0.16em] ${textMuted}`}>
+                      Folder
+                    </p>
+                    <h1 className={`mt-2 text-2xl font-semibold ${textPrimary}`}>
+                      {stripSectionPrefixFromTitle(
+                        selectedFolderNode.title,
+                        selectedFolderNode.section
+                      )}
+                    </h1>
+                  </div>
+                  {initialIsAdmin ? (
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => openAdminEdit(selectedFolderNode.id)}
+                        className={[
+                          pillButton,
+                          isDark
+                            ? "border-slate-800 bg-slate-900 text-slate-200 hover:border-slate-700"
+                            : "border-slate-200 bg-white text-slate-700 hover:border-slate-300",
+                          "shadow-sm",
+                          focusRing,
+                        ].join(" ")}
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+
+                <p className={`text-sm ${textMuted}`}>
+                  Edit this folder to rename it or move it to trash.
+                </p>
+              </div>
           ) : activeNote ? (
               activeNoteLocked ? (
                 <div
@@ -2115,7 +2198,7 @@ export default function NotesClient({
                       )}
                     </h3>
                     <p className={`text-sm ${textMuted}`}>
-                      Sign in to view this Stock Trading note.
+                      Sign in as the site owner to view this note.
                     </p>
                     <div className="h-4 w-2/3 rounded bg-white/10" />
                     <div className="h-4 w-full rounded bg-white/10" />
@@ -2196,7 +2279,7 @@ export default function NotesClient({
 
 		              <div className={`${bodyBase} text-[15px]`}>
                     {typeof activeLiveMarkdown === "string" ? (
-                      <MdxPreviewClient
+                      <NoteContent
                         source={activeLiveMarkdown}
                         suppressFirstHeading
                       />
@@ -2340,12 +2423,8 @@ export default function NotesClient({
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-xl font-semibold text-white">
-                  Unlock Stock Trading notes
+                  Locked. Personal use only.
                 </h3>
-                <p className="mt-1 text-sm text-white/70">
-                  Software Programming and Motivation notes stay open for
-                  everyone.
-                </p>
               </div>
               <button
                 type="button"

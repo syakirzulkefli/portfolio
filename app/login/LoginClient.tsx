@@ -1,21 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, type FormEvent } from "react";
+import { useMemo, useState } from "react";
 
 type LoginClientProps = {
   next: string;
-  isAdminLogin: boolean;
   initialError: string | null;
   initialAuthAvailable: boolean;
 };
 
-const textInputClass =
-  "w-full rounded-xl border border-white/20 bg-black/40 px-4 py-3 text-sm text-white outline-none transition focus:border-white/40 focus:bg-white/10";
 const iconButtonClass =
   "inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white/90 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/40";
-const modeButtonBase =
-  "inline-flex items-center justify-center rounded-full border px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] transition";
 
 const GitHubIcon = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
@@ -72,10 +67,16 @@ const feedbackFromCode = (code: string | null): Feedback => {
   if (code === "session") {
     return { type: "error", text: "Could not create login session. Try again." };
   }
-  if (code === "approval_required") {
+  if (code === "owner_only") {
     return {
-      type: "info",
-      text: "Your account is pending owner approval. Access is blocked until approved.",
+      type: "error",
+      text: "Only the site owner account can sign in to private notes.",
+    };
+  }
+  if (code === "forbidden") {
+    return {
+      type: "error",
+      text: "The owner account is not registered in the notes admin list yet.",
     };
   }
   if (code === "missing_email_or_password") {
@@ -90,24 +91,6 @@ const feedbackFromCode = (code: string | null): Feedback => {
       text: "Email is not verified. Complete verification code step first.",
     };
   }
-  if (code === "email_already_registered") {
-    return { type: "error", text: "Email is already registered. Try sign in instead." };
-  }
-  if (code === "invalid_password") {
-    return {
-      type: "error",
-      text: "Password does not meet minimum requirement set in Supabase.",
-    };
-  }
-  if (code === "missing_email_or_code") {
-    return { type: "error", text: "Email and verification code are required." };
-  }
-  if (code === "invalid_verification_code") {
-    return { type: "error", text: "Verification code is invalid or expired." };
-  }
-  if (code === "signup_failed") {
-    return { type: "error", text: "Sign-up failed. Try again." };
-  }
   if (code === "request_failed") {
     return { type: "error", text: "Request failed. Check your connection and try again." };
   }
@@ -118,137 +101,11 @@ const sanitizeNext = (value: string) => (value.startsWith("/") ? value : "/notes
 
 export default function LoginClient({
   next,
-  isAdminLogin,
   initialError,
   initialAuthAvailable,
 }: LoginClientProps) {
   const safeNext = useMemo(() => sanitizeNext(next), [next]);
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
-  const [signupStep, setSignupStep] = useState<"credentials" | "verify" | "done">(
-    "credentials"
-  );
-  const [busy, setBusy] = useState(false);
-
-  const [signInEmail, setSignInEmail] = useState("");
-  const [signInPassword, setSignInPassword] = useState("");
-
-  const [signUpEmail, setSignUpEmail] = useState("");
-  const [signUpPassword, setSignUpPassword] = useState("");
-  const [verificationCode, setVerificationCode] = useState("");
-
-  const initialFeedback = feedbackFromCode(initialError);
-  const [feedback, setFeedback] = useState<Feedback>(initialFeedback);
-
-  const clearFeedback = () => setFeedback(null);
-
-  const setFeedbackFromErrorCode = (code: string | null) => {
-    setFeedback(feedbackFromCode(code));
-  };
-
-  const handlePasswordSignIn = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (busy) return;
-    clearFeedback();
-    setBusy(true);
-
-    try {
-      const response = await fetch("/api/auth/password/signin", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          email: signInEmail,
-          password: signInPassword,
-          next: safeNext,
-        }),
-      });
-
-      const payload = (await response.json()) as { ok?: boolean; error?: string; next?: string };
-      if (!response.ok || !payload.ok) {
-        setFeedbackFromErrorCode(payload.error ?? "request_failed");
-        return;
-      }
-
-      window.location.href = sanitizeNext(payload.next ?? safeNext);
-    } catch {
-      setFeedbackFromErrorCode("request_failed");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleSignUp = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (busy) return;
-    clearFeedback();
-    setBusy(true);
-
-    try {
-      const response = await fetch("/api/auth/password/signup", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          email: signUpEmail,
-          password: signUpPassword,
-        }),
-      });
-      const payload = (await response.json()) as {
-        ok?: boolean;
-        error?: string;
-        message?: string;
-      };
-
-      if (!response.ok || !payload.ok) {
-        setFeedbackFromErrorCode(payload.error ?? "signup_failed");
-        return;
-      }
-
-      setSignupStep("verify");
-      setFeedback({
-        type: "info",
-        text:
-          payload.message || "Account created. Enter the verification code sent to your email.",
-      });
-    } catch {
-      setFeedbackFromErrorCode("request_failed");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleVerifyCode = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (busy) return;
-    clearFeedback();
-    setBusy(true);
-
-    try {
-      const response = await fetch("/api/auth/password/verify", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          email: signUpEmail,
-          code: verificationCode,
-          next: safeNext,
-        }),
-      });
-      const payload = (await response.json()) as {
-        ok?: boolean;
-        error?: string;
-      };
-
-      if (!response.ok || !payload.ok) {
-        setFeedbackFromErrorCode(payload.error ?? "invalid_verification_code");
-        return;
-      }
-
-      setSignupStep("done");
-      setFeedback(null);
-    } catch {
-      setFeedbackFromErrorCode("request_failed");
-    } finally {
-      setBusy(false);
-    }
-  };
+  const [feedback] = useState<Feedback>(feedbackFromCode(initialError));
 
   return (
     <main className="h-[100dvh] overflow-hidden bg-[#040608] px-4 py-3 text-white sm:px-6 sm:py-5">
@@ -257,48 +114,8 @@ export default function LoginClient({
           <div className="space-y-8">
             <header className="space-y-3">
               <h1 className="text-3xl leading-tight font-semibold sm:text-[2rem]">
-                {isAdminLogin
-                  ? "Sign in to manage notes"
-                  : "Sign in to access admin-only notes"}
+                Locked. Personal use only.
               </h1>
-              <p className="max-w-[48ch] text-sm leading-relaxed text-white/70">
-                {isAdminLogin
-                  ? "Admin access is limited to approved accounts in the notes database."
-                  : "Software Programming and Motivation notes are public. Stock Trading notes are admin-only."}
-              </p>
-              <div className="flex gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMode("signin");
-                    clearFeedback();
-                  }}
-                  className={[
-                    modeButtonBase,
-                    mode === "signin"
-                      ? "border-white/40 bg-white/10 text-white"
-                      : "border-white/15 bg-black/30 text-white/70 hover:text-white",
-                  ].join(" ")}
-                >
-                  Sign In
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMode("signup");
-                    setSignupStep("credentials");
-                    clearFeedback();
-                  }}
-                  className={[
-                    modeButtonBase,
-                    mode === "signup"
-                      ? "border-white/40 bg-white/10 text-white"
-                      : "border-white/15 bg-black/30 text-white/70 hover:text-white",
-                  ].join(" ")}
-                >
-                  Sign Up
-                </button>
-              </div>
             </header>
 
             {feedback ? (
@@ -314,188 +131,10 @@ export default function LoginClient({
               </p>
             ) : null}
 
-            {mode === "signin" ? (
-              <form className="space-y-5" onSubmit={handlePasswordSignIn}>
-                <label className="block space-y-2">
-                  <span className="text-xs font-semibold uppercase tracking-[0.14em] text-white/60">
-                    Email
-                  </span>
-                  <input
-                    type="email"
-                    name="email"
-                    autoComplete="email"
-                    value={signInEmail}
-                    onChange={(e) => setSignInEmail(e.target.value)}
-                    disabled={!initialAuthAvailable || busy}
-                    className={textInputClass}
-                  />
-                </label>
-                <label className="block space-y-2">
-                  <span className="text-xs font-semibold uppercase tracking-[0.14em] text-white/60">
-                    Password
-                  </span>
-                  <input
-                    type="password"
-                    name="password"
-                    autoComplete="current-password"
-                    value={signInPassword}
-                    onChange={(e) => setSignInPassword(e.target.value)}
-                    disabled={!initialAuthAvailable || busy}
-                    className={textInputClass}
-                  />
-                </label>
-                <button
-                  type="submit"
-                  disabled={busy || !initialAuthAvailable}
-                  className="w-full rounded-xl border border-[#1a5b66] bg-gradient-to-r from-[#0b3a42] via-[#0f4b56] to-[#145c66] px-4 py-3 text-sm font-semibold uppercase tracking-[0.15em] text-[#e9fbff] shadow-[0_8px_20px_rgba(11,58,66,0.35)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70"
-                >
-                  {!initialAuthAvailable
-                    ? "Sign In Unavailable"
-                    : busy
-                      ? "Please wait..."
-                      : "Sign In"}
-                </button>
-                <p className="text-center text-xs text-white/55">
-                  Don&apos;t have an account?{" "}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMode("signup");
-                      setSignupStep("credentials");
-                      clearFeedback();
-                    }}
-                    className="font-semibold uppercase tracking-[0.12em] text-white/80 underline underline-offset-4 hover:text-white"
-                  >
-                    Sign up
-                  </button>
-                </p>
-              </form>
-            ) : (
-              <>
-                {signupStep === "credentials" ? (
-                  <form className="space-y-5" onSubmit={handleSignUp}>
-                    <label className="block space-y-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.14em] text-white/60">
-                        Email
-                      </span>
-                      <input
-                        type="email"
-                        name="signup-email"
-                        autoComplete="email"
-                        value={signUpEmail}
-                        onChange={(e) => setSignUpEmail(e.target.value)}
-                        disabled={!initialAuthAvailable || busy}
-                        className={textInputClass}
-                      />
-                    </label>
-                    <label className="block space-y-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.14em] text-white/60">
-                        Password
-                      </span>
-                      <input
-                        type="password"
-                        name="signup-password"
-                        autoComplete="new-password"
-                        value={signUpPassword}
-                        onChange={(e) => setSignUpPassword(e.target.value)}
-                        disabled={!initialAuthAvailable || busy}
-                        className={textInputClass}
-                      />
-                    </label>
-                    <button
-                      type="submit"
-                      disabled={busy || !initialAuthAvailable}
-                      className="w-full rounded-xl border border-[#1a5b66] bg-gradient-to-r from-[#0b3a42] via-[#0f4b56] to-[#145c66] px-4 py-3 text-sm font-semibold uppercase tracking-[0.15em] text-[#e9fbff] shadow-[0_8px_20px_rgba(11,58,66,0.35)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70"
-                    >
-                      {!initialAuthAvailable
-                        ? "Sign Up Unavailable"
-                        : busy
-                          ? "Please wait..."
-                          : "Create Account"}
-                    </button>
-                    <p className="text-center text-xs text-white/55">
-                      Already have an account?{" "}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMode("signin");
-                          clearFeedback();
-                        }}
-                        className="font-semibold uppercase tracking-[0.12em] text-white/80 underline underline-offset-4 hover:text-white"
-                      >
-                        Sign in
-                      </button>
-                    </p>
-                  </form>
-                ) : null}
-
-                {signupStep === "verify" ? (
-                  <form
-                    className="space-y-4 rounded-xl border border-white/10 bg-black/20 p-4"
-                    onSubmit={handleVerifyCode}
-                  >
-                    <h2 className="text-sm font-semibold text-white/90">Verify Email Code</h2>
-                    <p className="text-xs text-white/55">
-                      Enter the verification code sent to {signUpEmail}.
-                    </p>
-                    <label className="block space-y-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.14em] text-white/60">
-                        Verification Code
-                      </span>
-                      <input
-                        type="text"
-                        name="verification-code"
-                        autoComplete="one-time-code"
-                        value={verificationCode}
-                        onChange={(e) => setVerificationCode(e.target.value)}
-                        disabled={!initialAuthAvailable || busy}
-                        className={textInputClass}
-                      />
-                    </label>
-                    <button
-                      type="submit"
-                      disabled={busy || !initialAuthAvailable}
-                      className="w-full rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-70"
-                    >
-                      {!initialAuthAvailable
-                        ? "Verification Unavailable"
-                        : busy
-                          ? "Please wait..."
-                          : "Verify Code"}
-                    </button>
-                  </form>
-                ) : null}
-
-                {signupStep === "done" ? (
-                  <div className="space-y-4 rounded-xl border border-white/10 bg-black/20 p-4">
-                    <h2 className="text-sm font-semibold text-white/90">Verification Completed</h2>
-                    <p className="text-xs text-white/60">
-                      Credentials accepted. Wait for admin approval before accessing notes.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMode("signin");
-                        setSignupStep("credentials");
-                        setVerificationCode("");
-                        clearFeedback();
-                      }}
-                      className="w-full rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-white/15"
-                    >
-                      Back to Sign In
-                    </button>
-                  </div>
-                ) : null}
-              </>
-            )}
-
             <section className="space-y-3 pt-1">
               {initialAuthAvailable ? (
                 <>
-                  <p className="text-center text-sm text-white/45">Or sign in using</p>
-                  <p className="text-center text-xs text-white/40">
-                    GitHub/Google sign-in also requires owner approval.
-                  </p>
+                  <p className="text-center text-sm text-white/45">Sign in with</p>
                   <div className="flex items-center justify-center gap-5">
                     <a
                       href={`/api/auth/signin?provider=github&next=${encodeURIComponent(safeNext)}`}

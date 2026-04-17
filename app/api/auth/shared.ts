@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isNotesOwnerEmail } from "./owner";
 
 export type SupabaseConfig = {
   supabaseUrl: string;
@@ -10,9 +11,9 @@ export type AuthUser = {
   email: string | null;
 };
 
-export type ApprovalResult =
+export type OwnerAccessResult =
   | { ok: true; user: AuthUser }
-  | { ok: false; error: "unauthenticated" | "approval_required" };
+  | { ok: false; error: "unauthenticated" | "owner_only" | "forbidden" };
 
 const normalizeEnvValue = (value: string | undefined) => {
   if (!value) return null;
@@ -80,7 +81,7 @@ const getAuthUser = async (
   }
 };
 
-const isApprovedUser = async (
+const hasAdminRecord = async (
   config: SupabaseConfig,
   accessToken: string,
   userId: string
@@ -109,15 +110,19 @@ const isApprovedUser = async (
   }
 };
 
-export const ensureApprovedUser = async (
+export const ensureOwnerAccess = async (
   config: SupabaseConfig,
   accessToken: string
-): Promise<ApprovalResult> => {
+): Promise<OwnerAccessResult> => {
   const user = await getAuthUser(config, accessToken);
   if (!user) return { ok: false, error: "unauthenticated" };
 
-  const approved = await isApprovedUser(config, accessToken, user.id);
-  if (!approved) return { ok: false, error: "approval_required" };
+  if (!isNotesOwnerEmail(user.email)) {
+    return { ok: false, error: "owner_only" };
+  }
+
+  const approved = await hasAdminRecord(config, accessToken, user.id);
+  if (!approved) return { ok: false, error: "forbidden" };
 
   return { ok: true, user };
 };

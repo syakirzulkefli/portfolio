@@ -58,8 +58,12 @@ export default function AuthCallbackPage() {
           return;
         }
         const body = (await res.json().catch(() => ({}))) as { error?: string };
-        if (body.error === "approval_required") {
-          router.replace("/login?error=approval_required");
+        if (body.error === "owner_only") {
+          router.replace("/login?error=owner_only");
+          return;
+        }
+        if (body.error === "forbidden") {
+          router.replace("/login?error=forbidden");
           return;
         }
         if (body.error === "config") {

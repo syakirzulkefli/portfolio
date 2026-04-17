@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import {
-  ensureApprovedUser,
+  ensureOwnerAccess,
   getSupabaseConfig,
 } from "../../shared";
+import { isNotesOwnerEmail } from "../../owner";
 
 export const runtime = "edge";
 
@@ -63,6 +64,10 @@ export async function POST(request: Request) {
     );
   }
 
+  if (!isNotesOwnerEmail(email)) {
+    return NextResponse.json({ ok: false, error: "owner_only" }, { status: 403 });
+  }
+
   try {
     let attempt = await verifyWithType(
       config.supabaseUrl,
@@ -103,12 +108,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const approval = await ensureApprovedUser(config, accessToken);
-    if (!approval.ok) {
-      if (approval.error === "approval_required") {
-        return NextResponse.json({ ok: true, approved: false, next });
-      }
-      return NextResponse.json({ ok: false, error: approval.error }, { status: 401 });
+    const access = await ensureOwnerAccess(config, accessToken);
+    if (!access.ok) {
+      const status = access.error === "unauthenticated" ? 401 : 403;
+      return NextResponse.json({ ok: false, error: access.error }, { status });
     }
 
     return NextResponse.json({ ok: true, approved: true, next });

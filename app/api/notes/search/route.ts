@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
 import { getNotesSnapshot } from "../../../notes/store";
+import { requiresNotesOwnerAccess } from "../../../notes/access";
 import { getAdminSession } from "../../../notes/admin/supabase.server";
+import { stripContentToPlainText } from "../../../notes/content-format";
 
 export const runtime = "edge";
 
@@ -102,7 +104,7 @@ export async function GET(request: Request) {
 
   const candidates = snapshot.notes
     .filter((note) => {
-      if (!isAdmin && note.domain === "trading") return false;
+      if (!isAdmin && requiresNotesOwnerAccess(note.domain)) return false;
       if (domain && note.domain !== domain) return false;
       return true;
     })
@@ -110,7 +112,8 @@ export async function GET(request: Request) {
 
   const results: { id: string; snippets: string[]; matchesCount: number }[] = [];
   for (const id of candidates) {
-    const src = snapshot.sourceById[id];
+    const rawSource = snapshot.sourceById[id];
+    const src = rawSource ? stripContentToPlainText(rawSource) : "";
     if (!src) continue;
     const haystack = src.toLowerCase();
     if (normalizedTerms.every((term) => haystack.includes(term))) {

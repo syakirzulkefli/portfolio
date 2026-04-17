@@ -10,7 +10,6 @@ import {
   normalizeUpdatePayload,
 } from "../note-shared";
 import {
-  collectDescendantIds,
   fetchNoteIndex,
   validateParentSelection,
 } from "../tree-shared";
@@ -197,9 +196,44 @@ export async function DELETE(
       { status: noteIndex.status }
     );
   }
-  const deletedIds = collectDescendantIds(noteIndex.data, noteId);
+
+  const target = noteIndex.data.find((row) => row.id === noteId) ?? null;
+  if (!target) {
+    return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
+  }
+
+  if (target.kind === "folder") {
+    const directChildren = noteIndex.data.filter((row) => row.parent_id === noteId);
+    if (directChildren.length > 0) {
+      const reparentQuery = new URLSearchParams({
+        id: `in.(${directChildren.map((row) => `"${row.id}"`).join(",")})`,
+      });
+
+      const reparentResult = await supabaseAdminRestRequest<AdminNoteRecord[]>(
+        session,
+        "notes",
+        {
+          method: "PATCH",
+          query: reparentQuery,
+          body: { parent_id: target.parent_id ?? null },
+        }
+      );
+
+      if (!reparentResult.ok) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "folder_reparent_failed",
+            details: reparentResult.error,
+          },
+          { status: reparentResult.status }
+        );
+      }
+    }
+  }
+
   const deleteQuery = new URLSearchParams({
-    id: `in.(${[...deletedIds].map((id) => `"${id}"`).join(",")})`,
+    id: `eq.${noteId}`,
   });
 
   const result = await supabaseAdminRestRequest<AdminNoteRecord[]>(

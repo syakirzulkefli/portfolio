@@ -9,6 +9,7 @@ import {
   isSectionInDomain,
   type SectionId,
 } from "./data";
+import { requiresNotesOwnerAccess } from "./access";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -39,14 +40,14 @@ const firstEnvValue = (...keys: string[]) => {
   return null;
 };
 
-const noteRequiresAdmin = (
+const noteRequiresOwnerAccess = (
   noteId: string,
   isAdmin: boolean,
   notes: Awaited<ReturnType<typeof getNotesSnapshot>>["notes"]
 ) => {
   if (isAdmin) return false;
   const note = notes.find((item) => item.id === noteId);
-  return note?.domain === "trading";
+  return note ? requiresNotesOwnerAccess(note.domain) : false;
 };
 
 const isAuthenticated = async () => {
@@ -148,7 +149,7 @@ export default async function NotesPage({
       ? null
       : notes.find((note) => note.domain === initialDomain)?.id ?? null);
   const locked = activeNoteId
-    ? noteRequiresAdmin(activeNoteId, isAdmin, notes)
+    ? noteRequiresOwnerAccess(activeNoteId, isAdmin, notes)
     : false;
   const source = activeNoteId
     ? (locked ? "" : snapshot.sourceById[activeNoteId] ?? "")

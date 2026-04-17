@@ -35,7 +35,7 @@ const canReachSupabaseAuth = async (supabaseUrl: string) => {
       cache: "no-store",
       signal: controller.signal,
     });
-    return response.ok;
+    return response.status > 0 && response.status < 500;
   } catch {
     return false;
   } finally {

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 
 import AdminNoteDrawer, { type AdminNoteRecord } from "../AdminNoteDrawer";
+import NoteContent from "../NoteContent";
 import {
   domains,
   firstSectionForDomain,
@@ -13,7 +14,6 @@ import {
   type NoteNode,
   type SectionId,
 } from "../data";
-import MdxPreviewClient from "../mdx/MdxPreviewClient";
 
 type AdminListRecord = AdminNoteRecord & {
   deleted_at?: string | null;
@@ -591,7 +591,7 @@ export default function AdminNotesClient({
                     className="rounded-xl border border-white/10 bg-slate-950/70 p-5"
                     style={mdxVars}
                   >
-                    <MdxPreviewClient source={selected.content} />
+                    <NoteContent source={selected.content} />
                   </div>
                 ) : (
                   <div className="rounded-xl border border-dashed border-white/15 bg-white/5 px-4 py-5 text-sm text-white/60">

@@ -11,10 +11,17 @@
   },
   "dependencies": {
     "@mdx-js/mdx": "^3.1.1",
+    "@tiptap/extension-highlight": "^3.22.3",
+    "@tiptap/extension-image": "^3.22.3",
+    "@tiptap/extension-link": "^3.22.3",
+    "@tiptap/pm": "^3.22.3",
+    "@tiptap/react": "^3.22.3",
+    "@tiptap/starter-kit": "^3.22.3",
     "next": "15.5.2",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-fast-marquee": "^1.6.5",
+    "rehype-stringify": "^10.0.1",
     "remark-gfm": "^4.0.1"
   },
   "devDependencies": {

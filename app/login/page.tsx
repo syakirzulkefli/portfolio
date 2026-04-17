@@ -41,7 +41,7 @@ const canReachSupabaseAuth = async () => {
       cache: "no-store",
       signal: controller.signal,
     });
-    return response.ok;
+    return response.status > 0 && response.status < 500;
   } catch {
     return false;
   } finally {
@@ -57,14 +57,12 @@ export default async function LoginPage({
   const params = (await searchParams) ?? {};
   const nextParam = typeof params.next === "string" ? params.next : "/notes";
   const next = nextParam.startsWith("/") ? nextParam : "/notes";
-  const isAdminLogin = next.startsWith("/notes/admin");
   const error = typeof params.error === "string" ? params.error : null;
   const initialAuthAvailable = await canReachSupabaseAuth();
 
   return (
     <LoginClient
       next={next}
-      isAdminLogin={isAdminLogin}
       initialError={error}
       initialAuthAvailable={initialAuthAvailable}
     />

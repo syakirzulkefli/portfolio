@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseConfig } from "../../shared";
+import { isNotesOwnerEmail } from "../../owner";
 
 export const runtime = "edge";
 
@@ -32,6 +33,10 @@ export async function POST(request: Request) {
       { ok: false, error: "missing_email_or_password" },
       { status: 400 }
     );
+  }
+
+  if (!isNotesOwnerEmail(email)) {
+    return NextResponse.json({ ok: false, error: "owner_only" }, { status: 403 });
   }
 
   try {
@@ -79,7 +84,6 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     ok: true,
-    message:
-      "Sign-up received. Check your email for the verification code, then verify below. Access still requires owner approval.",
+    message: "Owner account sign-up received. Check your email for the verification code.",
   });
 }

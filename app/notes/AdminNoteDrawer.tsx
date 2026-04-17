@@ -3,7 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 
-import MdxPreviewClient from "./mdx/MdxPreviewClient";
+import NoteContent from "./NoteContent";
+import RichTextEditor, { type RichTextEditorHandle } from "./RichTextEditor";
+import {
+  DEFAULT_HIGHLIGHT_COLOR,
+  deriveSummaryFromContent,
+} from "./content-format";
 import {
   firstSectionForDomain,
   isSectionInDomain,
@@ -97,22 +102,6 @@ const slugify = (input: string) =>
     .replace(/-+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-const stripMarkdown = (source: string) =>
-  source
-    .replace(/```[\s\S]*?```/g, " ")
-    .replace(/`[^`]*`/g, " ")
-    .replace(/!\[[^\]]*]\([^)]+\)/g, " ")
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-    .replace(/[#>*_~]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-
-const deriveSummary = (source: string) => {
-  const text = stripMarkdown(source);
-  if (!text) return "";
-  return text.length > 180 ? `${text.slice(0, 177).trimEnd()}…` : text;
-};
-
 const normalizeNoteId = (explicit: string, title: string) => {
   const raw = explicit.trim() || slugify(title);
   const cleaned = raw
@@ -177,7 +166,9 @@ const formToPayload = (form: FormState) => {
   const section = resolveSectionForDomain(form.domain, form.section);
   const content = form.kind === "folder" ? "" : form.content ?? "";
   const summary =
-    form.kind === "folder" ? form.summary.trim() : form.summary.trim() || deriveSummary(content);
+    form.kind === "folder"
+      ? form.summary.trim()
+      : form.summary.trim() || deriveSummaryFromContent(content);
 
   return {
     id,
@@ -205,12 +196,53 @@ const formToPayload = (form: FormState) => {
 const payloadKey = (payload: ReturnType<typeof formToPayload>) =>
   JSON.stringify(payload);
 
+const formatAdminSaveError = (error?: string, details?: string) => {
+  const normalizedError = (error || "").trim();
+  const normalizedDetails = (details || "").trim();
+
+  if (normalizedError === "unauthenticated") {
+    return "Your session is not signed in anymore. Sign in again.";
+  }
+  if (normalizedError === "forbidden") {
+    return "This account does not have notes admin access.";
+  }
+  if (normalizedError === "missing_config") {
+    return "Supabase env is missing in this app.";
+  }
+  if (normalizedError === "invalid_id") {
+    return "Invalid note slug. Change the title or set a valid custom slug.";
+  }
+  if (normalizedError === "parent_must_match_topic") {
+    return "Parent folder must be in the same domain and topic.";
+  }
+  if (normalizedError === "parent_must_be_folder") {
+    return "Parent selection must be a folder.";
+  }
+  if (normalizedError === "parent_not_found") {
+    return "Selected parent folder no longer exists.";
+  }
+  if (normalizedError === "note_id_conflict") {
+    return "Note slug already exists and could not be auto-resolved.";
+  }
+
+  if (normalizedDetails) {
+    return normalizedError
+      ? `${normalizedError}: ${normalizedDetails}`
+      : normalizedDetails;
+  }
+
+  if (normalizedError) return normalizedError;
+  return "Save failed.";
+};
+
 type DrawerMode = "new" | "edit";
 type SaveTrigger = "manual" | "autosave";
 type AutosaveState = "idle" | "saving" | "saved" | "failed";
 
 const AUTOSAVE_DEBOUNCE_MS = 2000;
 const AUTOSAVE_RETRY_MS = 4000;
+
+const canAutosaveForm = (current: FormState) => current.kind === "note";
 
 export default function AdminNoteDrawer({
   open,
@@ -257,6 +289,7 @@ export default function AdminNoteDrawer({
   const [autosaveState, setAutosaveState] = useState<AutosaveState>("idle");
   const [previewMode, setPreviewMode] = useState<"edit" | "preview">("edit");
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [highlightColor, setHighlightColor] = useState(DEFAULT_HIGHLIGHT_COLOR);
   const [linkPickerOpen, setLinkPickerOpen] = useState(false);
   const [linkPickerLoading, setLinkPickerLoading] = useState(false);
   const [linkPickerQuery, setLinkPickerQuery] = useState("");
@@ -272,7 +305,7 @@ export default function AdminNoteDrawer({
   >([]);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const contentRef = useRef<HTMLTextAreaElement | null>(null);
+  const editorRef = useRef<RichTextEditorHandle | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const formRef = useRef<FormState>(
     buildEmptyForm({
@@ -509,24 +542,30 @@ export default function AdminNoteDrawer({
     };
   }, [defaultDomain, defaultParentId, defaultSection, open, mode, noteId]);
 
-  const insertAtCursor = (text: string) => {
-    const textarea = contentRef.current;
-    const content = form.content;
-    if (!textarea) {
-      setField("content", `${content}${text}`);
+  const handleApplyHighlight = () => {
+    setError(null);
+    setMessage(null);
+    const didApply = editorRef.current?.applyHighlight(highlightColor) ?? false;
+    if (!didApply) {
+      setMessage(
+        "Select text to highlight, or place the cursor inside highlighted text to change its color."
+      );
       return;
     }
+    editorRef.current?.focus();
+  };
 
-    const start = textarea.selectionStart ?? content.length;
-    const end = textarea.selectionEnd ?? content.length;
-    const nextContent = `${content.slice(0, start)}${text}${content.slice(end)}`;
-    setField("content", nextContent);
-
-    requestAnimationFrame(() => {
-      textarea.focus();
-      const cursor = start + text.length;
-      textarea.setSelectionRange(cursor, cursor);
-    });
+  const handleRemoveHighlight = () => {
+    setError(null);
+    setMessage(null);
+    const didRemove = editorRef.current?.removeHighlight() ?? false;
+    if (!didRemove) {
+      setMessage(
+        "Place the cursor inside highlighted text, or select highlighted text to remove it."
+      );
+      return;
+    }
+    editorRef.current?.focus();
   };
 
   const handleUploadClick = () => {
@@ -540,34 +579,17 @@ export default function AdminNoteDrawer({
     event.target.value = "";
     if (!file) return;
 
-    setUploading(true);
     setError(null);
     setMessage(null);
 
-    try {
-      const body = new FormData();
-      body.append("file", file);
-      const response = await fetch("/api/notes/admin/uploads", {
-        method: "POST",
-        body,
-      });
-      const payload = (await response.json()) as {
-        ok?: boolean;
-        url?: string;
-        error?: string;
-        details?: string;
-      };
-      if (!response.ok || !payload.ok || !payload.url) {
-        setError(payload.error || "Upload failed.");
-        return;
-      }
-      const alt = file.name ? file.name.replace(/\.[^/.]+$/, "") : "image";
-      insertAtCursor(`\n![${alt}](${payload.url})\n`);
+    if (!editorRef.current) {
+      setError("Editor is not ready yet.");
+      return;
+    }
+
+    const inserted = await editorRef.current.insertImageFromFile(file);
+    if (inserted) {
       setMessage("Image uploaded.");
-    } catch {
-      setError("Upload failed.");
-    } finally {
-      setUploading(false);
     }
   };
 
@@ -709,6 +731,10 @@ export default function AdminNoteDrawer({
     if (loading || deleting || uploading) return false;
 
     const current = formRef.current;
+    if (trigger === "autosave" && !canAutosaveForm(current)) {
+      if (autosaveState !== "failed") setAutosaveState("idle");
+      return false;
+    }
     if (trigger === "autosave" && !hasAutosaveMinimumFields(current)) {
       if (autosaveState !== "failed") setAutosaveState("idle");
       return false;
@@ -771,7 +797,7 @@ export default function AdminNoteDrawer({
 
       if (!response.ok || !data.ok || !data.note) {
         setAutosaveState("failed");
-        if (reportValidation) setError(data.error || "Save failed.");
+        setError(formatAdminSaveError(data.error, data.details));
         if (trigger === "autosave") {
           retryTimerRef.current = setTimeout(() => {
             void persistChanges({ trigger: "autosave", force: true, reportValidation: false });
@@ -810,7 +836,7 @@ export default function AdminNoteDrawer({
       return true;
     } catch {
       setAutosaveState("failed");
-      if (reportValidation) setError("Save failed.");
+      setError("Save failed.");
       if (trigger === "autosave") {
         retryTimerRef.current = setTimeout(() => {
           void persistChanges({ trigger: "autosave", force: true, reportValidation: false });
@@ -861,6 +887,10 @@ export default function AdminNoteDrawer({
     clearRetryTimer();
 
     const current = formRef.current;
+    if (!canAutosaveForm(current)) {
+      if (autosaveState !== "failed") setAutosaveState("idle");
+      return;
+    }
     if (!hasAutosaveMinimumFields(current)) {
       if (autosaveState !== "failed") setAutosaveState("idle");
       return;
@@ -887,6 +917,7 @@ export default function AdminNoteDrawer({
   useEffect(() => {
     if (!open) return;
     const handleWindowBlur = () => {
+      if (!canAutosaveForm(formRef.current)) return;
       void flushAutosave();
     };
     window.addEventListener("blur", handleWindowBlur);
@@ -899,6 +930,7 @@ export default function AdminNoteDrawer({
     return () => {
       clearAutosaveTimer();
       clearRetryTimer();
+      if (!canAutosaveForm(formRef.current)) return;
       void persistChanges({ trigger: "autosave", force: true, reportValidation: false });
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1166,7 +1198,7 @@ export default function AdminNoteDrawer({
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <label className={`text-xs font-semibold uppercase tracking-[0.12em] ${muted}`}>
-                    {canEditContent ? "Content (Markdown)" : "Folder"}
+                    {canEditContent ? "Content" : "Folder"}
                   </label>
                   {canEditContent ? (
                     <div className="flex items-center gap-2">
@@ -1208,6 +1240,59 @@ export default function AdminNoteDrawer({
                       </button>
                       <button
                         type="button"
+                        onClick={handleApplyHighlight}
+                        className={[
+                          pill,
+                          focus,
+                          isDark
+                            ? "border-slate-800 bg-slate-900 text-slate-200 hover:border-slate-700"
+                            : "border-slate-200 bg-white text-slate-700 hover:border-slate-300",
+                          "h-9 px-3 py-1",
+                        ].join(" ")}
+                      >
+                        Highlight
+                      </button>
+                      <label
+                        className={[
+                          pill,
+                          focus,
+                          isDark
+                            ? "border-slate-800 bg-slate-900 text-slate-200 hover:border-slate-700"
+                            : "border-slate-200 bg-white text-slate-700 hover:border-slate-300",
+                          "h-9 px-3 py-1 gap-2",
+                        ].join(" ")}
+                      >
+                        <span>Color</span>
+                        <input
+                          type="color"
+                          value={highlightColor}
+                          onChange={(e) => {
+                            const nextColor = e.target.value;
+                            setHighlightColor(nextColor);
+                            setError(null);
+                            setMessage(null);
+                            editorRef.current?.updateHighlightColor(nextColor);
+                          }}
+                          className="h-5 w-7 cursor-pointer rounded border-0 bg-transparent p-0"
+                          aria-label="Highlight color"
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleRemoveHighlight}
+                        className={[
+                          pill,
+                          focus,
+                          isDark
+                            ? "border-slate-800 bg-slate-900 text-slate-200 hover:border-slate-700"
+                            : "border-slate-200 bg-white text-slate-700 hover:border-slate-300",
+                          "h-9 px-3 py-1",
+                        ].join(" ")}
+                      >
+                        Unhighlight
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => setLinkPickerOpen((prev) => !prev)}
                         className={[
                           pill,
@@ -1246,10 +1331,15 @@ export default function AdminNoteDrawer({
                     </div>
                   ) : (
                     <p className={`text-xs ${muted}`}>
-                      Folders only expand/collapse in the tree and do not store markdown.
+                      Folders only expand/collapse in the tree and do not store note content.
                     </p>
                   )}
                 </div>
+                {canEditContent ? (
+                  <p className={`text-xs ${muted}`}>
+                    Select text and use <code>Highlight</code> to color it. Put the cursor inside highlighted text to recolor it, use <code>Unhighlight</code> to remove it, and paste or upload images directly into the note.
+                  </p>
+                ) : null}
 
                 {canEditContent && linkPickerOpen ? (
                   <div
@@ -1281,7 +1371,16 @@ export default function AdminNoteDrawer({
                               type="button"
                               onClick={() => {
                                 const href = `/notes?domain=${note.domain}&note=${note.id}`;
-                                insertAtCursor(`[${note.title}](${href})`);
+                                const inserted = editorRef.current?.insertLink(
+                                  href,
+                                  note.title
+                                );
+                                if (!inserted) {
+                                  setMessage(
+                                    "Select text first, or place the cursor where the link should be inserted."
+                                  );
+                                  return;
+                                }
                                 setLinkPickerOpen(false);
                                 setLinkPickerQuery("");
                               }}
@@ -1319,12 +1418,16 @@ export default function AdminNoteDrawer({
                     This item is a folder. Save it to use it as a parent branch in the left tree.
                   </div>
                 ) : previewMode === "edit" ? (
-                  <textarea
-                    ref={contentRef}
+                  <RichTextEditor
+                    ref={editorRef}
                     value={form.content}
-                    onChange={(e) => setField("content", e.target.value)}
-                    rows={18}
-                    className={`w-full resize-y rounded-2xl border px-4 py-3 font-mono text-[13px] leading-[1.6] outline-none ${input}`}
+                    isDark={isDark}
+                    onChange={(value) => setField("content", value)}
+                    onError={setError}
+                    onBusyChange={setUploading}
+                    onActiveHighlightColorChange={(color) => {
+                      if (color) setHighlightColor(color);
+                    }}
                   />
                 ) : (
                   <div
@@ -1334,9 +1437,7 @@ export default function AdminNoteDrawer({
                     ].join(" ")}
                     style={mdxVars}
                   >
-                    <div className="prose prose-invert max-w-none">
-                      <MdxPreviewClient source={form.content} />
-                    </div>
+                    <NoteContent source={form.content} />
                   </div>
                 )}
               </div>

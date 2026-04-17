@@ -13,6 +13,7 @@
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 3. Optional env:
    - `NOTES_STORAGE_BUCKET` (default: `notes-media`)
+   - `NOTES_OWNER_EMAIL` or `NOTES_OWNER_EMAILS` (comma-separated). If unset, the app falls back to `msyakirzulkefli@gmail.com`.
 
 ### Ongoing workflow
 
@@ -44,5 +45,6 @@ Bootstrap your admin account:
 
 Public behavior:
 
-- Public note pages/search only read `is_published = true`.
+- Public note pages/search only read published `software` notes.
+- Motivation and Stock Trading notes require the owner account.
 - Draft notes remain invisible publicly and are only visible in admin CRUD.

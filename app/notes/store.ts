@@ -384,7 +384,15 @@ const prunePlaceholderNotes = (snapshot: NotesSnapshotData): NotesSnapshotData =
   if (visibleNoteIds.size === snapshot.notes.length) return snapshot;
 
   const nodeById = new Map(snapshot.nodes.map((node) => [node.id, node]));
-  const keepNodeIds = new Set<string>(visibleNoteIds);
+  const keepNodeIds = new Set<string>(
+    snapshot.nodes
+      .filter((node) => node.kind === "folder")
+      .map((node) => node.id)
+  );
+
+  for (const noteId of visibleNoteIds) {
+    keepNodeIds.add(noteId);
+  }
 
   for (const noteId of visibleNoteIds) {
     let cursorParentId = nodeById.get(noteId)?.parentId ?? null;

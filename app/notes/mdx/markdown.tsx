@@ -1,5 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
-import type { Root } from "hast";
+import type { Element, Root, RootContent } from "hast";
 import { toJsxRuntime } from "hast-util-to-jsx-runtime";
 import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
@@ -10,6 +10,82 @@ import { unified } from "unified";
 
 const cx = (...parts: Array<string | undefined | null | false>) =>
   parts.filter(Boolean).join(" ");
+
+const DEFAULT_HIGHLIGHT_COLOR = "#facc15";
+
+const isSafeHighlightColor = (value: string) => {
+  const color = value.trim();
+  if (!color) return false;
+  return (
+    /^#[0-9a-f]{3,8}$/i.test(color) ||
+    /^rgb(a)?\([\d\s.,%]+\)$/i.test(color) ||
+    /^hsl(a)?\([\d\s.,%]+\)$/i.test(color) ||
+    /^[a-z]+$/i.test(color)
+  );
+};
+
+const parseHighlightSegments = (value: string): RootContent[] => {
+  const pattern = /==([\s\S]+?)==(?:\{([^}]+)\})?/g;
+  const nodes: RootContent[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(value)) !== null) {
+    if (match.index > lastIndex) {
+      nodes.push({ type: "text", value: value.slice(lastIndex, match.index) });
+    }
+
+    const text = (match[1] || "").trim();
+    const requestedColor = (match[2] || "").trim();
+    const color = isSafeHighlightColor(requestedColor)
+      ? requestedColor
+      : DEFAULT_HIGHLIGHT_COLOR;
+
+    if (text) {
+      nodes.push({
+        type: "element",
+        tagName: "mark",
+        properties: {
+          "data-highlight-color": color,
+        },
+        children: [{ type: "text", value: text }],
+      });
+    } else {
+      nodes.push({ type: "text", value: match[0] });
+    }
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < value.length) {
+    nodes.push({ type: "text", value: value.slice(lastIndex) });
+  }
+
+  return nodes.length > 0 ? nodes : [{ type: "text", value }];
+};
+
+const applyTextHighlights = (node: Root | Element) => {
+  const nextChildren: RootContent[] = [];
+
+  for (const child of node.children) {
+    if (child.type === "text") {
+      nextChildren.push(...parseHighlightSegments(child.value));
+      continue;
+    }
+
+    if (
+      child.type === "element" &&
+      child.tagName !== "code" &&
+      child.tagName !== "pre"
+    ) {
+      applyTextHighlights(child);
+    }
+
+    nextChildren.push(child);
+  }
+
+  node.children = nextChildren;
+};
 
 type HighlightTokenType = "comment" | "string" | "keyword" | "number";
 
@@ -192,6 +268,33 @@ const Pre = ({ className, ...props }: ComponentProps<"pre">) => (
   />
 );
 
+const Mark = ({
+  className,
+  children,
+  ...props
+}: ComponentProps<"mark"> & {
+  "data-highlight-color"?: string;
+}) => {
+  const highlightColor =
+    typeof props["data-highlight-color"] === "string" &&
+    isSafeHighlightColor(props["data-highlight-color"])
+      ? props["data-highlight-color"]
+      : DEFAULT_HIGHLIGHT_COLOR;
+
+  return (
+    <mark
+      className={cx(
+        "rounded px-1 py-0.5 text-slate-950 shadow-[inset_0_-1px_0_rgba(15,23,42,0.18)]",
+        className
+      )}
+      style={{ backgroundColor: highlightColor }}
+      {...props}
+    >
+      {children}
+    </mark>
+  );
+};
+
 export const markdownComponents = {
   a: Anchor,
   h1: ({ className, ...props }: ComponentProps<"h1">) => (
@@ -241,6 +344,7 @@ export const markdownComponents = {
   ),
   code: Code,
   pre: Pre,
+  mark: Mark,
   img: ({ className, ...props }: ComponentProps<"img">) => (
     <img
       alt=""
@@ -267,6 +371,7 @@ export const renderMarkdownToJsx = async (
     .use(remarkRehype);
 
   const tree = (await processor.run(processor.parse(source))) as Root;
+  applyTextHighlights(tree);
   if (options.suppressFirstHeading) {
     const firstMeaningfulNodeIndex = tree.children.findIndex((node) => {
       if (node.type === "text") return node.value.trim().length > 0;

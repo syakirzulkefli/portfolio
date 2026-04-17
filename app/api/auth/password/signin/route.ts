@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import {
-  ensureApprovedUser,
+  ensureOwnerAccess,
   getSupabaseConfig,
   setSessionCookies,
 } from "../../shared";
+import { isNotesOwnerEmail } from "../../owner";
 
 export const runtime = "edge";
 
@@ -41,6 +42,10 @@ export async function POST(request: Request) {
       { ok: false, error: "missing_email_or_password" },
       { status: 400 }
     );
+  }
+
+  if (!isNotesOwnerEmail(email)) {
+    return NextResponse.json({ ok: false, error: "owner_only" }, { status: 403 });
   }
 
   let payload: unknown;
@@ -104,10 +109,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "invalid_session" }, { status: 500 });
   }
 
-  const approval = await ensureApprovedUser(config, accessToken);
-  if (!approval.ok) {
-    const status = approval.error === "approval_required" ? 403 : 401;
-    return NextResponse.json({ ok: false, error: approval.error }, { status });
+  const access = await ensureOwnerAccess(config, accessToken);
+  if (!access.ok) {
+    const status = access.error === "unauthenticated" ? 401 : 403;
+    return NextResponse.json({ ok: false, error: access.error }, { status });
   }
 
   const response = NextResponse.json({ ok: true, next });

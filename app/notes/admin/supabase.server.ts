@@ -1,6 +1,7 @@
 import "server-only";
 
 import { cookies } from "next/headers";
+import { isNotesOwnerEmail } from "../../api/auth/owner";
 
 export type SupabaseConfig = {
   supabaseUrl: string;
@@ -126,6 +127,10 @@ export const getAdminSession = async (): Promise<AdminSession> => {
 
   const user = await getAuthUser(config, accessToken);
   if (!user) return { ok: false, reason: "unauthenticated" };
+
+  if (!isNotesOwnerEmail(user.email)) {
+    return { ok: false, reason: "forbidden" };
+  }
 
   const admin = await isAdmin(config, accessToken, user.id);
   if (!admin) return { ok: false, reason: "forbidden" };
