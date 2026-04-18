@@ -981,18 +981,18 @@ export default function AdminNoteDrawer({
       />
       <div
         className={[
-          "relative ml-auto flex h-full w-full max-w-[720px] flex-col border-l shadow-2xl",
+          "relative ml-auto flex h-full w-full max-w-full flex-col border-t shadow-2xl sm:max-w-[720px] sm:border-l sm:border-t-0",
           surface,
         ].join(" ")}
       >
-        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/60 px-5 py-4">
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/60 px-4 py-3 sm:px-5 sm:py-4">
           <div className="min-w-0">
             <h2 className="text-lg font-semibold">{title}</h2>
             {autosaveLabel ? (
               <p className={`mt-1 text-xs ${muted}`}>Autosave: {autosaveLabel}</p>
             ) : null}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
             {canDelete ? (
               <button
                 type="button"
@@ -1040,7 +1040,7 @@ export default function AdminNoteDrawer({
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-5 py-5">
+        <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5">
           {error ? (
             <p className="mb-4 rounded-xl border border-red-400/40 bg-red-500/10 px-3 py-2 text-sm text-red-100">
               {error}
@@ -1201,7 +1201,8 @@ export default function AdminNoteDrawer({
                     {canEditContent ? "Content" : "Folder"}
                   </label>
                   {canEditContent ? (
-                    <div className="flex items-center gap-2">
+                    <div className="-mx-1 w-[calc(100%+0.5rem)] overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:w-auto sm:overflow-visible sm:pb-0">
+                      <div className="flex w-max items-center gap-2 sm:w-auto sm:flex-wrap">
                       <button
                         type="button"
                         onClick={() => setPreviewMode("edit")}
@@ -1328,6 +1329,7 @@ export default function AdminNoteDrawer({
                         onChange={handleFileSelected}
                         className="hidden"
                       />
+                      </div>
                     </div>
                   ) : (
                     <p className={`text-xs ${muted}`}>

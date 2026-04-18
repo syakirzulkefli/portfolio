@@ -88,16 +88,17 @@ export default async function NotesPage({
 
   const adminSession = await getAdminSession();
   const isAdmin = adminSession.ok;
+  const canViewNotes = isAdmin;
   const authed =
     adminSession.ok || adminSession.reason === "forbidden"
       ? true
       : await isAuthenticated();
 
   const snapshot = await getNotesSnapshot({
-    accessToken: authed ? token : null,
+    accessToken: canViewNotes ? token : null,
   });
-  const notes = snapshot.notes;
-  const nodes = snapshot.nodes;
+  const notes = canViewNotes ? snapshot.notes : [];
+  const nodes = canViewNotes ? snapshot.nodes : [];
   const requestedDomainParam =
     typeof resolvedSearchParams.domain === "string"
       ? resolvedSearchParams.domain
@@ -152,15 +153,15 @@ export default async function NotesPage({
     ? noteRequiresOwnerAccess(activeNoteId, isAdmin, notes)
     : false;
   const source = activeNoteId
-    ? (locked ? "" : snapshot.sourceById[activeNoteId] ?? "")
+    ? (locked || !canViewNotes ? "" : snapshot.sourceById[activeNoteId] ?? "")
     : "";
   const initialDataNotice =
-    snapshot.sourceType === "legacy-fallback"
+    canViewNotes && snapshot.sourceType === "legacy-fallback"
       ? snapshot.fallbackReason === "missing_config"
-        ? "Supabase is not configured. Showing local fallback notes. Sign-in and admin actions stay unavailable until env values are fixed."
+        ? "Supabase is not configured. Notes stay locked until the env values are fixed."
         : snapshot.fallbackReason === "request_failed"
-          ? "Supabase is unreachable. Showing local fallback notes from the repo. Sign-in and admin actions stay unavailable until the Supabase project URL works again."
-          : "Supabase returned no notes. Showing local fallback notes from the repo instead."
+          ? "Supabase is unreachable. Notes stay locked until the Supabase project URL works again."
+          : "Supabase returned no notes."
       : null;
   const initialAuthAvailable =
     snapshot.fallbackReason === null || snapshot.fallbackReason === "empty_database";

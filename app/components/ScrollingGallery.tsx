@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import Image from "next/image";
 
 interface GalleryImage {
@@ -282,11 +282,13 @@ const ScrollingColumn = ({
     };
   }, [direction, speed, enableScroll]);
 
-  const handleMouseEnter = () => {
+  const handlePointerEnter = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.pointerType !== "mouse") return;
     isHovered.current = true;
   };
 
-  const handleMouseLeave = () => {
+  const handlePointerLeave = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.pointerType !== "mouse") return;
     isHovered.current = false;
   };
 
@@ -308,8 +310,8 @@ const ScrollingColumn = ({
             }
           : undefined
       }
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      onPointerEnter={handlePointerEnter}
+      onPointerLeave={handlePointerLeave}
     >
       <div className="space-y-0">
         {duplicatedImages.map((image, index) => (

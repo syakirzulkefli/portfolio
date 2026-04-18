@@ -45,6 +45,5 @@ Bootstrap your admin account:
 
 Public behavior:
 
-- Public note pages/search only read published `software` notes.
-- Motivation and Stock Trading notes require the owner account.
+- All note pages/search require the owner account.
 - Draft notes remain invisible publicly and are only visible in admin CRUD.

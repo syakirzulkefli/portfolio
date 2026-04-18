@@ -58,7 +58,7 @@ const feedbackFromCode = (code: string | null): Feedback => {
   if (code === "provider_unavailable") {
     return {
       type: "error",
-      text: "Supabase auth is unreachable. Local fallback notes can still load, but sign-in and admin access are unavailable until the project URL works again.",
+      text: "Supabase auth is unreachable. Notes stay locked until the project URL works again.",
     };
   }
   if (code === "provider") return { type: "error", text: "Unsupported login provider." };
@@ -108,12 +108,12 @@ export default function LoginClient({
   const [feedback] = useState<Feedback>(feedbackFromCode(initialError));
 
   return (
-    <main className="h-[100dvh] overflow-hidden bg-[#040608] px-4 py-3 text-white sm:px-6 sm:py-5">
-      <div className="mx-auto flex h-full w-full items-center justify-center">
-        <div className="w-full max-w-lg rounded-3xl border border-white/15 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-7 shadow-[0_24px_80px_rgba(0,0,0,0.55)] sm:p-9">
+    <main className="min-h-[100dvh] overflow-y-auto bg-[#040608] px-4 py-4 text-white sm:px-6 sm:py-5">
+      <div className="mx-auto flex min-h-[calc(100dvh-2rem)] w-full items-center justify-center sm:min-h-[calc(100dvh-2.5rem)]">
+        <div className="w-full max-w-lg rounded-3xl border border-white/15 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.55)] sm:p-9">
           <div className="space-y-8">
             <header className="space-y-3">
-              <h1 className="text-3xl leading-tight font-semibold sm:text-[2rem]">
+              <h1 className="text-2xl leading-tight font-semibold sm:text-[2rem]">
                 Locked. Personal use only.
               </h1>
             </header>
@@ -135,7 +135,7 @@ export default function LoginClient({
               {initialAuthAvailable ? (
                 <>
                   <p className="text-center text-sm text-white/45">Sign in with</p>
-                  <div className="flex items-center justify-center gap-5">
+                  <div className="flex items-center justify-center gap-4 sm:gap-5">
                     <a
                       href={`/api/auth/signin?provider=github&next=${encodeURIComponent(safeNext)}`}
                       className={iconButtonClass}

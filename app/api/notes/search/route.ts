@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
 import { getNotesSnapshot } from "../../../notes/store";
-import { requiresNotesOwnerAccess } from "../../../notes/access";
 import { getAdminSession } from "../../../notes/admin/supabase.server";
 import { stripContentToPlainText } from "../../../notes/content-format";
 
@@ -79,10 +78,11 @@ export async function GET(request: Request) {
   const token = cookieStore.get("sb-access-token")?.value ?? null;
   const adminSession = await getAdminSession();
   const isAdmin = adminSession.ok;
-  const authed =
-    adminSession.ok || adminSession.reason === "forbidden"
-      ? true
-      : await isAuthenticated();
+  if (!isAdmin) {
+    return NextResponse.json({ results: [] });
+  }
+
+  const authed = adminSession.ok ? true : await isAuthenticated();
   const snapshot = await getNotesSnapshot({
     accessToken: authed ? token : null,
   });
@@ -104,7 +104,6 @@ export async function GET(request: Request) {
 
   const candidates = snapshot.notes
     .filter((note) => {
-      if (!isAdmin && requiresNotesOwnerAccess(note.domain)) return false;
       if (domain && note.domain !== domain) return false;
       return true;
     })

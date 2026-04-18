@@ -617,12 +617,20 @@ export default function NotesClient({
   );
   const searchRef = useRef<HTMLInputElement | null>(null);
   const searchContainerRef = useRef<HTMLDivElement | null>(null);
+  const sectionsSheetTouchStartYRef = useRef<number | null>(null);
+  const sectionsSheetTouchDeltaYRef = useRef(0);
   const lastDomainRef = useRef<DomainId | null>(null);
   const [isResultsOpen, setIsResultsOpen] = useState(false);
 
   const clearFilters = () => {
     setQuery("");
     setActiveLevel("all");
+  };
+
+  const closeSectionsSheet = () => {
+    setSectionsOpen(false);
+    sectionsSheetTouchStartYRef.current = null;
+    sectionsSheetTouchDeltaYRef.current = 0;
   };
 
   useEffect(() => {
@@ -1334,8 +1342,8 @@ export default function NotesClient({
     ? "/syakir_brand_logo_black.svg"
     : "/syakir_brand_logo_white.svg";
   const brandLogoClass = isDark
-    ? "h-20 md:h-24 w-auto shrink-0 drop-shadow-[0_0_10px_rgba(0,0,0,0.65)]"
-    : "h-20 md:h-24 w-auto shrink-0";
+    ? "h-14 sm:h-16 md:h-24 w-auto shrink-0 drop-shadow-[0_0_10px_rgba(0,0,0,0.65)]"
+    : "h-14 sm:h-16 md:h-24 w-auto shrink-0";
 
   const availableSections = useMemo(() => {
     const set = new Set<SectionId>();
@@ -1690,9 +1698,9 @@ export default function NotesClient({
               : "border-slate-200/70 bg-slate-100/95",
           ].join(" ")}
         >
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-6 pb-4">
-          <div className="flex items-center justify-between gap-4 py-4">
-            <Link href="/" aria-label="Home" className="flex items-center">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-4 pb-3 sm:px-6 sm:pb-4">
+          <div className="flex flex-col gap-3 py-3 sm:py-4 lg:flex-row lg:items-center lg:justify-between">
+            <Link href="/" aria-label="Home" className="flex min-w-0 items-center">
               <Image
                 src={brandLogoSrc}
                 alt="Mohamad Syakir"
@@ -1702,7 +1710,157 @@ export default function NotesClient({
                 className={brandLogoClass}
               />
             </Link>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+              <div className="order-1 flex items-center gap-2 sm:order-2">
+                <div
+                  ref={searchContainerRef}
+                  className="relative min-w-0 flex-1 sm:w-56 sm:flex-none lg:w-64"
+                >
+                  <input
+                    ref={searchRef}
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onFocus={() => {
+                      if (queryNormalized) setIsResultsOpen(true);
+                    }}
+                    placeholder="Search notes..."
+                    className={`w-full rounded-xl border px-3 py-2 text-sm outline-none ring-0 transition duration-150 ease-out ${inputClass}`}
+                  />
+                  <div className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 text-[11px] uppercase tracking-[0.15em] text-sky-400 lg:block">
+                    /
+                  </div>
+                  {queryNormalized && isResultsOpen && (
+                    <div
+                      className={[
+                        "absolute left-0 right-0 top-[110%] z-30 rounded-2xl border shadow-xl",
+                        isDark
+                          ? "border-slate-800/70 bg-slate-950/95"
+                          : "border-slate-200 bg-white",
+                      ].join(" ")}
+                    >
+                      <div className="flex items-center justify-between gap-2 border-b px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                        <span>Results for “{queryNormalized}”</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            clearFilters();
+                            searchRef.current?.focus();
+                          }}
+                          className={[
+                            "rounded-full border px-2 py-1 transition duration-150 ease-out",
+                            hoverRow,
+                            borderSoft,
+                            focusRing,
+                            "text-[10px] font-semibold uppercase tracking-[0.15em]",
+                          ].join(" ")}
+                        >
+                          Clear
+                        </button>
+                      </div>
+                      {contentSearchPending || isSearchingContent ? (
+                        <p className="px-3 py-3 text-xs text-slate-400">
+                          Searching notes...
+                        </p>
+                      ) : null}
+                      <div className="max-h-[60vh] space-y-2 overflow-y-auto p-2 sm:max-h-[360px]">
+                        {searchResults.length > 0 ? (
+                          searchResults.slice(0, 10).map(({ note, snippets }) => (
+                            <button
+                              key={note.id}
+                              type="button"
+                              onClick={() => handleResultClick(note)}
+                              className={[
+                                "w-full rounded-xl border px-3 py-3 text-left transition duration-150 ease-out",
+                                hoverRow,
+                                focusRing,
+                                borderSoft,
+                              ].join(" ")}
+                            >
+                              <div className="flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-sky-400">
+                                <span>
+                                  {sections.find((s) => s.id === note.section)
+                                    ?.label ?? note.section}
+                                </span>
+                                <span className="text-slate-500">•</span>
+                                <span>{note.chapterTitle ?? "Root"}</span>
+                              </div>
+                              <div className="mt-1 text-sm font-semibold text-slate-200">
+                                {stripSectionPrefixFromTitle(note.title, note.section)}
+                              </div>
+                              <p className="mt-1 text-[11px] uppercase tracking-[0.15em] text-slate-500">
+                                {snippets.length} match{snippets.length === 1 ? "" : "es"}
+                              </p>
+                              {snippets.slice(0, 3).map((snippet, idx) => (
+                                <p
+                                  key={`${note.id}-snip-${idx}`}
+                                  className="mt-1 text-xs leading-relaxed text-slate-400"
+                                >
+                                  {highlightSnippetParts(snippet, searchTerms)}
+                                </p>
+                              ))}
+                            </button>
+                          ))
+                        ) : (
+                          <p className="px-3 py-2 text-xs text-slate-400">
+                            No notes match this search.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={() => setTheme(isDark ? "light" : "dark")}
+                  className={[
+                    pillButton,
+                    isDark
+                      ? "border-slate-800/80 bg-slate-900 text-slate-200 hover:border-sky-500/60"
+                      : "border-slate-200 bg-white text-slate-700 hover:border-sky-500/60",
+                    "h-10 w-10 shrink-0 p-0 justify-center",
+                    "shadow-sm shadow-slate-900/10 hover:brightness-105",
+                    focusRing,
+                  ].join(" ")}
+                  aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+                >
+                  <span className="flex h-6 w-6 items-center justify-center">
+                    {isDark ? (
+                      <svg
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        className="h-4 w-4 text-sky-200"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="M21 12.79A9 9 0 0 1 11.21 3 7 7 0 1 0 21 12.79Z"
+                        />
+                      </svg>
+                    ) : (
+                      <svg
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        className="h-4 w-4 text-amber-500"
+                      >
+                        <circle cx="12" cy="12" r="4" fill="currentColor" />
+                        <g
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                        >
+                          <line x1="12" y1="2" x2="12" y2="5" />
+                          <line x1="12" y1="19" x2="12" y2="22" />
+                          <line x1="4.22" y1="4.22" x2="6.34" y2="6.34" />
+                          <line x1="17.66" y1="17.66" x2="19.78" y2="19.78" />
+                          <line x1="2" y1="12" x2="5" y2="12" />
+                          <line x1="19" y1="12" x2="22" y2="12" />
+                          <line x1="4.22" y1="19.78" x2="6.34" y2="17.66" />
+                          <line x1="17.66" y1="6.34" x2="19.78" y2="4.22" />
+                        </g>
+                      </svg>
+                    )}
+                  </span>
+                </button>
+              </div>
+              <div className="order-2 flex flex-wrap items-center justify-end gap-2 sm:order-1 sm:gap-3">
               {!initialIsAuthenticated ? (
                 <Link
                   href={loginHref}
@@ -1774,155 +1932,9 @@ export default function NotesClient({
                   </button>
                 </>
               )}
-              <div
-                ref={searchContainerRef}
-                className="relative w-40 sm:w-56 lg:w-64"
-              >
-                <input
-                  ref={searchRef}
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onFocus={() => {
-                    if (queryNormalized) setIsResultsOpen(true);
-                  }}
-                  placeholder="Search notes..."
-                  className={`w-full rounded-xl border px-3 py-2 text-sm outline-none ring-0 transition duration-150 ease-out ${inputClass}`}
-                />
-                  <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] uppercase tracking-[0.15em] text-sky-400">
-                    /
-                  </div>
-                {queryNormalized && isResultsOpen && (
-                  <div
-                    className={[
-                      "absolute left-0 right-0 top-[110%] z-30 rounded-2xl border shadow-xl",
-                      isDark
-                        ? "border-slate-800/70 bg-slate-950/95"
-                        : "border-slate-200 bg-white",
-                    ].join(" ")}
-                  >
-                    <div className="flex items-center justify-between gap-2 border-b px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
-                      <span>Results for “{queryNormalized}”</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          clearFilters();
-                          searchRef.current?.focus();
-                        }}
-                        className={[
-                          "rounded-full border px-2 py-1 transition duration-150 ease-out",
-                          hoverRow,
-                          borderSoft,
-                          focusRing,
-                          "text-[10px] font-semibold uppercase tracking-[0.15em]",
-                        ].join(" ")}
-                      >
-                        Clear
-                      </button>
-                    </div>
-                    {contentSearchPending || isSearchingContent ? (
-                      <p className="px-3 py-3 text-xs text-slate-400">
-                        Searching notes...
-                      </p>
-                    ) : null}
-                    <div className="max-h-[360px] space-y-2 overflow-y-auto p-2">
-                      {searchResults.length > 0 ? (
-                        searchResults.slice(0, 10).map(({ note, snippets }) => (
-                          <button
-                            key={note.id}
-                            type="button"
-                            onClick={() => handleResultClick(note)}
-                            className={[
-                              "w-full rounded-xl border px-3 py-3 text-left transition duration-150 ease-out",
-                              hoverRow,
-                              focusRing,
-                              borderSoft,
-                            ].join(" ")}
-                          >
-                            <div className="flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-sky-400">
-                              <span>
-                                {sections.find((s) => s.id === note.section)
-                                  ?.label ?? note.section}
-                              </span>
-                              <span className="text-slate-500">•</span>
-                              <span>{note.chapterTitle ?? "Root"}</span>
-                            </div>
-                            <div className="mt-1 text-sm font-semibold text-slate-200">
-                              {stripSectionPrefixFromTitle(note.title, note.section)}
-                            </div>
-                            <p className="mt-1 text-[11px] uppercase tracking-[0.15em] text-slate-500">
-                              {snippets.length} match{snippets.length === 1 ? "" : "es"}
-                            </p>
-                            {snippets.slice(0, 3).map((snippet, idx) => (
-                              <p
-                                key={`${note.id}-snip-${idx}`}
-                                className="mt-1 text-xs text-slate-400 leading-relaxed"
-                              >
-                                {highlightSnippetParts(snippet, searchTerms)}
-                              </p>
-                            ))}
-                          </button>
-                        ))
-                      ) : (
-                        <p className="px-3 py-2 text-xs text-slate-400">
-                          No notes match this search.
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
               </div>
-	              <button
-	                onClick={() => setTheme(isDark ? "light" : "dark")}
-                className={[
-                  pillButton,
-                  isDark
-                    ? "border-slate-800/80 bg-slate-900 text-slate-200 hover:border-sky-500/60"
-                    : "border-slate-200 bg-white text-slate-700 hover:border-sky-500/60",
-                  "h-10 w-10 p-0 justify-center",
-                  "shadow-sm shadow-slate-900/10 hover:brightness-105",
-                  focusRing,
-                ].join(" ")}
-                aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-              >
-                <span className="flex h-6 w-6 items-center justify-center">
-                  {isDark ? (
-                    <svg
-                      aria-hidden="true"
-                      viewBox="0 0 24 24"
-                      className="h-4 w-4 text-sky-200"
-                    >
-                      <path
-                        fill="currentColor"
-                        d="M21 12.79A9 9 0 0 1 11.21 3 7 7 0 1 0 21 12.79Z"
-                      />
-                    </svg>
-                  ) : (
-                    <svg
-                      aria-hidden="true"
-                      viewBox="0 0 24 24"
-                      className="h-4 w-4 text-amber-500"
-                    >
-                      <circle cx="12" cy="12" r="4" fill="currentColor" />
-                      <g
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                      >
-                        <line x1="12" y1="2" x2="12" y2="5" />
-                        <line x1="12" y1="19" x2="12" y2="22" />
-                        <line x1="4.22" y1="4.22" x2="6.34" y2="6.34" />
-                        <line x1="17.66" y1="17.66" x2="19.78" y2="19.78" />
-                        <line x1="2" y1="12" x2="5" y2="12" />
-                        <line x1="19" y1="12" x2="22" y2="12" />
-                        <line x1="4.22" y1="19.78" x2="6.34" y2="17.66" />
-                        <line x1="17.66" y1="6.34" x2="19.78" y2="4.22" />
-                      </g>
-                    </svg>
-                  )}
-                </span>
-		              </button>
-	            </div>
-	          </div>
+            </div>
+          </div>
 
           <div className="flex w-full flex-col items-start gap-2 sm:gap-3">
             {initialDataNotice ? (
@@ -1985,7 +1997,45 @@ export default function NotesClient({
 
             <div
               className={[
-                "w-full max-w-7xl pb-1",
+                "w-full pb-1 sm:hidden",
+                "overflow-x-auto",
+                "[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+              ].join(" ")}
+            >
+              <div className="flex w-max flex-nowrap items-center gap-4 pr-2">
+                {quickSubmenuIcons.map((item) => {
+                  const key = `mobile-section:${item.id}`;
+                  const isActive = activeSection === item.id;
+
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => onQuickIconClick(item)}
+                      className={[
+                        "relative inline-flex shrink-0 items-center justify-center rounded-2xl border p-3 transition duration-150 ease-out",
+                        isActive
+                          ? isDark
+                            ? "border-sky-400/70 bg-sky-500/8 text-white shadow-[0_0_0_1px_rgba(56,189,248,0.08)]"
+                            : "border-sky-500/60 bg-sky-50 text-slate-900"
+                          : isDark
+                            ? "border-slate-800 bg-slate-900 text-white"
+                            : "border-slate-200 bg-white text-slate-900",
+                        "focus:outline-none focus:ring-0 focus-visible:ring-0",
+                      ].join(" ")}
+                      aria-label={item.label}
+                      title={item.label}
+                    >
+                      <span className="translate-y-[1px] scale-[0.8]">{item.icon}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div
+              className={[
+                "hidden w-full max-w-7xl pb-1 sm:block",
                 "overflow-x-auto sm:overflow-visible",
                 "[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
               ].join(" ")}
@@ -2043,7 +2093,7 @@ export default function NotesClient({
 
       <main
         id="notes-main"
-        className={`mx-auto grid w-full max-w-7xl grid-cols-1 gap-4 px-6 py-10 ${
+        className={`mx-auto grid w-full max-w-7xl grid-cols-1 gap-3 px-4 py-6 sm:gap-4 sm:px-6 sm:py-10 ${
           showSidebar ? "lg:grid-cols-[300px_minmax(0,1fr)]" : "lg:grid-cols-1"
         }`}
       >
@@ -2092,7 +2142,7 @@ export default function NotesClient({
           {isDomainLocked ? (
             <div
               className={[
-                "w-full rounded-2xl border p-7 shadow-xl",
+                "w-full rounded-2xl border p-4 shadow-xl sm:p-7",
                 surfaceElevated,
                 cardGradient,
               ].join(" ")}
@@ -2112,7 +2162,7 @@ export default function NotesClient({
                       isDark
                         ? "border-slate-800 bg-slate-900 text-slate-200 hover:border-sky-500/60"
                         : "border-slate-200 bg-white text-slate-700 hover:border-sky-500/60",
-                      "shadow-sm",
+                      "w-full justify-center shadow-sm sm:w-auto",
                       focusRing,
                     ].join(" ")}
                   >
@@ -2129,7 +2179,7 @@ export default function NotesClient({
           ) : selectedFolderNode ? (
               <div
                 className={[
-                  "mx-auto max-w-[920px] rounded-2xl border p-7 shadow-xl",
+                  "mx-auto max-w-[920px] rounded-2xl border p-4 shadow-xl sm:p-7",
                   surfaceElevated,
                   cardGradient,
                 ].join(" ")}
@@ -2158,7 +2208,7 @@ export default function NotesClient({
                     </h1>
                   </div>
                   {initialIsAdmin ? (
-                    <div className="flex items-center gap-2">
+                    <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
                       <button
                         type="button"
                         onClick={() => openAdminEdit(selectedFolderNode.id)}
@@ -2167,7 +2217,7 @@ export default function NotesClient({
                           isDark
                             ? "border-slate-800 bg-slate-900 text-slate-200 hover:border-slate-700"
                             : "border-slate-200 bg-white text-slate-700 hover:border-slate-300",
-                          "shadow-sm",
+                          "w-full justify-center shadow-sm sm:w-auto",
                           focusRing,
                         ].join(" ")}
                       >
@@ -2185,7 +2235,7 @@ export default function NotesClient({
               activeNoteLocked ? (
                 <div
                   className={[
-                    "mx-auto max-w-[920px] rounded-2xl border p-7 shadow-xl",
+                    "mx-auto max-w-[920px] rounded-2xl border p-4 shadow-xl sm:p-7",
                     surfaceElevated,
                     cardGradient,
                   ].join(" ")}
@@ -2208,7 +2258,7 @@ export default function NotesClient({
                   <button
                     type="button"
                     onClick={() => setShowLoginModal(true)}
-                    className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-200"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-200 sm:w-auto"
                   >
                     Login to unlock
                   </button>
@@ -2216,7 +2266,7 @@ export default function NotesClient({
               ) : (
 		            <article
               className={[
-                "mx-auto max-w-[920px] rounded-2xl border p-7 shadow-xl",
+                "mx-auto max-w-[920px] rounded-2xl border p-4 shadow-xl sm:p-7",
                 surfaceElevated,
                 cardGradient,
               ].join(" ")}
@@ -2243,7 +2293,7 @@ export default function NotesClient({
                       </h1>
                     </div>
                     {initialIsAdmin ? (
-                      <div className="flex items-center gap-2">
+                      <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
                         <button
                           type="button"
                           onClick={() => openAdminEdit(activeNote.id)}
@@ -2252,7 +2302,7 @@ export default function NotesClient({
                             isDark
                               ? "border-slate-800 bg-slate-900 text-slate-200 hover:border-slate-700"
                               : "border-slate-200 bg-white text-slate-700 hover:border-slate-300",
-                            "shadow-sm",
+                            "w-full justify-center shadow-sm sm:w-auto",
                             focusRing,
                           ].join(" ")}
                         >
@@ -2267,7 +2317,7 @@ export default function NotesClient({
                             isDark
                               ? "border-red-500/40 bg-red-500/10 text-red-100 hover:bg-red-500/20"
                               : "border-red-500/40 bg-red-50 text-red-700 hover:bg-red-100",
-                            "shadow-sm",
+                            "w-full justify-center shadow-sm sm:w-auto",
                             focusRing,
                           ].join(" ")}
                         >
@@ -2291,7 +2341,7 @@ export default function NotesClient({
               )
 			          ) : hasAnyNotes && filtersActive ? (
                 <div
-                  className={`mx-auto max-w-[920px] rounded-xl border border-dashed p-8 text-center ${borderSoft} ${textMuted}`}
+                  className={`mx-auto max-w-[920px] rounded-xl border border-dashed p-6 text-center sm:p-8 ${borderSoft} ${textMuted}`}
                 >
                   <p>
                     {contentSearchPending || isSearchingContent
@@ -2308,13 +2358,13 @@ export default function NotesClient({
                 </div>
               ) : sectionNodes.length > 0 ? (
 	            <div
-	              className={`mx-auto max-w-[920px] rounded-xl border border-dashed p-8 text-center ${borderSoft} ${textMuted}`}
+	              className={`mx-auto max-w-[920px] rounded-xl border border-dashed p-6 text-center sm:p-8 ${borderSoft} ${textMuted}`}
 	            >
 	              Select a note from the left tree.
             </div>
           ) : (
 	            <div
-	              className={`mx-auto max-w-[920px] rounded-xl border border-dashed p-8 text-center ${borderSoft} ${textMuted}`}
+	              className={`mx-auto max-w-[920px] rounded-xl border border-dashed p-6 text-center sm:p-8 ${borderSoft} ${textMuted}`}
 	            >
 	              Notes coming soon.
             </div>
@@ -2324,25 +2374,47 @@ export default function NotesClient({
       </main>
 
 	      {sectionsOpen && (
-        <div className="fixed inset-0 z-30 flex items-end justify-center bg-black/40 px-4 pb-4 pt-10 sm:items-center backdrop-blur-[2px] transition duration-200 ease-out">
+        <div
+          className="fixed inset-0 z-30 flex items-end justify-center bg-black/40 px-4 pb-4 pt-10 sm:items-center backdrop-blur-[2px] transition duration-200 ease-out"
+          onClick={closeSectionsSheet}
+        >
           <div
             className={[
-              "w-full max-w-md rounded-2xl border p-4 shadow-xl transition duration-200 ease-out",
+              "w-full max-w-md rounded-2xl border p-4 shadow-xl transition duration-200 ease-out sm:p-5",
               surfaceElevated,
               cardGradient,
             ].join(" ")}
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => {
+              sectionsSheetTouchStartYRef.current = e.touches[0]?.clientY ?? null;
+              sectionsSheetTouchDeltaYRef.current = 0;
+            }}
+            onTouchMove={(e) => {
+              const startY = sectionsSheetTouchStartYRef.current;
+              const currentY = e.touches[0]?.clientY;
+              if (startY === null || typeof currentY !== "number") return;
+              sectionsSheetTouchDeltaYRef.current = Math.max(0, currentY - startY);
+            }}
+            onTouchEnd={() => {
+              if (sectionsSheetTouchDeltaYRef.current > 90) {
+                closeSectionsSheet();
+                return;
+              }
+              sectionsSheetTouchStartYRef.current = null;
+              sectionsSheetTouchDeltaYRef.current = 0;
+            }}
           >
             <div className="mb-3 flex items-center justify-between gap-2">
               <h2 className={`${headingSm} ${textSubtle}`}>Browse sections</h2>
               <button
                 type="button"
-                onClick={() => setSectionsOpen(false)}
+                onClick={closeSectionsSheet}
                 className={`text-xs font-medium ${textMuted} ${focusRing} rounded-full px-2 py-1 ${hoverRow}`}
               >
                 Close
               </button>
 	            </div>
-	            <div className="max-h-[60vh] space-y-3 overflow-y-auto text-sm">
+	            <div className="max-h-[70vh] space-y-3 overflow-y-auto text-sm sm:max-h-[60vh]">
               {tree.roots.length > 0 ? (
                 renderTreeNodes(tree.roots, true)
               ) : (
@@ -2397,7 +2469,7 @@ export default function NotesClient({
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
           className={[
-            "fixed bottom-6 right-6 z-40",
+            "fixed bottom-4 right-4 z-40 sm:bottom-6 sm:right-6",
             pillButton,
             isDark
               ? "border-slate-700 bg-slate-900/95 text-slate-100 hover:border-sky-500/70"
@@ -2419,7 +2491,7 @@ export default function NotesClient({
 
       {showLoginModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-white/15 bg-[#0c111a] p-6 shadow-2xl">
+          <div className="w-full max-w-md rounded-2xl border border-white/15 bg-[#0c111a] p-4 shadow-2xl sm:p-6">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-xl font-semibold text-white">
