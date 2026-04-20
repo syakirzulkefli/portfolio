@@ -35,20 +35,13 @@ const firstHeaderValue = (value: string | null) => {
   return first || null;
 };
 
-const getAppOrigin = (request: Request) => {
-  const configuredOrigin = firstEnvValue(
-    "SITE_URL",
-    "NEXT_PUBLIC_SITE_URL",
-    "NEXT_PUBLIC_APP_URL"
-  );
-  if (configuredOrigin) {
-    try {
-      return new URL(configuredOrigin).origin;
-    } catch {
-      // Ignore invalid config and fall back to request-derived origin.
-    }
-  }
+const isLocalHostname = (hostname: string) =>
+  hostname === "localhost" ||
+  hostname === "127.0.0.1" ||
+  hostname === "0.0.0.0" ||
+  hostname === "::1";
 
+const getRequestOrigin = (request: Request) => {
   const requestUrl = new URL(request.url);
   const forwardedProto = firstHeaderValue(
     request.headers.get("x-forwarded-proto")
@@ -62,6 +55,31 @@ const getAppOrigin = (request: Request) => {
   }
 
   return requestUrl.origin;
+};
+
+const getAppOrigin = (request: Request) => {
+  const requestOrigin = getRequestOrigin(request);
+  const requestHostname = new URL(requestOrigin).hostname;
+
+  // Never force local development auth flows onto the production site URL.
+  if (isLocalHostname(requestHostname)) {
+    return requestOrigin;
+  }
+
+  const configuredOrigin = firstEnvValue(
+    "SITE_URL",
+    "NEXT_PUBLIC_SITE_URL",
+    "NEXT_PUBLIC_APP_URL"
+  );
+  if (configuredOrigin) {
+    try {
+      return new URL(configuredOrigin).origin;
+    } catch {
+      // Ignore invalid config and fall back to request-derived origin.
+    }
+  }
+
+  return requestOrigin;
 };
 
 const canReachSupabaseAuth = async (supabaseUrl: string) => {

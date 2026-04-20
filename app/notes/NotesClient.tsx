@@ -26,6 +26,7 @@ import {
 type NotesClientProps = {
   initialNotes: Note[];
   initialNodes: NoteNode[];
+  initialSourceById?: Record<string, string>;
   initialDomain?: DomainId;
   initialSection?: SectionId;
   initialActiveNoteId?: string | null;
@@ -33,7 +34,6 @@ type NotesClientProps = {
   initialIsAdmin?: boolean;
   initialDataNotice?: string | null;
   initialAuthAvailable?: boolean;
-  children?: ReactNode;
 };
 
 const normalizeForSearch = (input: string) =>
@@ -567,6 +567,7 @@ const GoogleLogo = () => (
 export default function NotesClient({
   initialNotes,
   initialNodes,
+  initialSourceById = {},
   initialDomain = "software",
   initialSection = firstSectionForDomain(initialDomain),
   initialActiveNoteId,
@@ -574,7 +575,6 @@ export default function NotesClient({
   initialIsAdmin = false,
   initialDataNotice = null,
   initialAuthAvailable = true,
-  children,
 }: NotesClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -613,7 +613,7 @@ export default function NotesClient({
   const [adminActionMessage, setAdminActionMessage] = useState<string | null>(null);
   const [adminDeletePending, setAdminDeletePending] = useState(false);
   const [liveMarkdownById, setLiveMarkdownById] = useState<Record<string, string>>(
-    {}
+    initialSourceById
   );
   const searchRef = useRef<HTMLInputElement | null>(null);
   const searchContainerRef = useRef<HTMLDivElement | null>(null);
@@ -703,6 +703,10 @@ export default function NotesClient({
     setNotes(initialNotes);
     setNodes(initialNodes);
   }, [initialNotes, initialNodes]);
+
+  useEffect(() => {
+    setLiveMarkdownById(initialSourceById);
+  }, [initialSourceById]);
 
   useEffect(() => {
     setActiveDomain(initialDomain);
@@ -2333,9 +2337,7 @@ export default function NotesClient({
                         source={activeLiveMarkdown}
                         suppressFirstHeading
                       />
-                    ) : (
-                      children
-                    )}
+                    ) : null}
                   </div>
 			            </article>
               )

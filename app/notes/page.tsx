@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import NotesClient from "./NotesClient";
-import MdxContent from "./mdx/MdxContent";
 import { getNotesSnapshot } from "./store";
 import { cookies } from "next/headers";
 import { getAdminSession } from "./admin/supabase.server";
@@ -9,7 +8,6 @@ import {
   isSectionInDomain,
   type SectionId,
 } from "./data";
-import { requiresNotesOwnerAccess } from "./access";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -38,16 +36,6 @@ const firstEnvValue = (...keys: string[]) => {
     if (value) return value;
   }
   return null;
-};
-
-const noteRequiresOwnerAccess = (
-  noteId: string,
-  isAdmin: boolean,
-  notes: Awaited<ReturnType<typeof getNotesSnapshot>>["notes"]
-) => {
-  if (isAdmin) return false;
-  const note = notes.find((item) => item.id === noteId);
-  return note ? requiresNotesOwnerAccess(note.domain) : false;
 };
 
 const isAuthenticated = async () => {
@@ -149,12 +137,6 @@ export default async function NotesPage({
     (keepSectionWithoutFallback
       ? null
       : notes.find((note) => note.domain === initialDomain)?.id ?? null);
-  const locked = activeNoteId
-    ? noteRequiresOwnerAccess(activeNoteId, isAdmin, notes)
-    : false;
-  const source = activeNoteId
-    ? (locked || !canViewNotes ? "" : snapshot.sourceById[activeNoteId] ?? "")
-    : "";
   const initialDataNotice =
     canViewNotes && snapshot.sourceType === "legacy-fallback"
       ? snapshot.fallbackReason === "missing_config"
@@ -170,6 +152,7 @@ export default async function NotesPage({
     <NotesClient
       initialNotes={notes}
       initialNodes={nodes}
+      initialSourceById={canViewNotes ? snapshot.sourceById : {}}
       initialDomain={initialDomain}
       initialSection={initialSection}
       initialActiveNoteId={activeNoteId}
@@ -177,8 +160,6 @@ export default async function NotesPage({
       initialIsAdmin={isAdmin}
       initialDataNotice={initialDataNotice}
       initialAuthAvailable={initialAuthAvailable}
-    >
-      {source ? <MdxContent source={source} suppressFirstHeading /> : null}
-    </NotesClient>
+    />
   );
 }

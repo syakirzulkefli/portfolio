@@ -70,7 +70,7 @@ const emptyForm: FormState = {
   tagsInput: "",
   pinned: false,
   sort_order: 0,
-  is_published: false,
+  is_published: true,
   content: "",
 };
 
@@ -87,7 +87,7 @@ const noteToForm = (note: AdminNoteRecord): FormState => ({
   tagsInput: note.tags.join(", "),
   pinned: note.pinned,
   sort_order: note.sort_order,
-  is_published: note.is_published,
+  is_published: true,
   content: note.content,
 });
 
@@ -188,7 +188,7 @@ const formToPayload = (form: FormState) => {
       .filter(Boolean),
     pinned: form.pinned,
     sort_order: Number.isFinite(form.sort_order) ? form.sort_order : 0,
-    is_published: form.is_published,
+    is_published: true,
     content,
   };
 };
@@ -1150,16 +1150,7 @@ export default function AdminNoteDrawer({
                   />
                 </div>
 
-                <div className="flex flex-wrap items-center justify-between gap-3 sm:col-span-2">
-                  <label className="inline-flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={form.is_published}
-                      onChange={(e) => setField("is_published", e.target.checked)}
-                      className="h-4 w-4 rounded border-slate-400"
-                    />
-                    Published
-                  </label>
+                <div className="flex flex-wrap items-center justify-end gap-3 sm:col-span-2">
                   <button
                     type="button"
                     onClick={() => setShowAdvanced((prev) => !prev)}
