@@ -9,11 +9,15 @@
 1. Run SQL schema in Supabase SQL editor:
    - `supabase/notes.sql`
 2. Ensure env is set:
+   - `SITE_URL` (recommended in production, for example `https://syakir.dev`)
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 3. Optional env:
    - `NOTES_STORAGE_BUCKET` (default: `notes-media`)
    - `NOTES_OWNER_EMAIL` or `NOTES_OWNER_EMAILS` (comma-separated). If unset, the app falls back to `msyakirzulkefli@gmail.com`.
+4. In Supabase Auth URL configuration, allow the production callback:
+   - Site URL: `https://syakir.dev`
+   - Redirect URL: `https://syakir.dev/auth/callback`
 
 ### Ongoing workflow
 
