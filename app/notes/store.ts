@@ -359,10 +359,13 @@ const normalizePlaceholderSource = (source: string) =>
     .trim()
     .toLowerCase();
 
-const isPlaceholderSource = (source: string) => {
-  if (!source.trim()) return true;
+const isPlaceholderSource = (
+  source: string,
+  { treatEmptyAsPlaceholder = true }: { treatEmptyAsPlaceholder?: boolean } = {}
+) => {
+  if (!source.trim()) return treatEmptyAsPlaceholder;
   const normalized = normalizePlaceholderSource(source);
-  if (!normalized) return true;
+  if (!normalized) return treatEmptyAsPlaceholder;
   return (
     normalized === "coming soon" ||
     normalized === "coming soon." ||
@@ -372,11 +375,14 @@ const isPlaceholderSource = (source: string) => {
   );
 };
 
-const prunePlaceholderNotes = (snapshot: NotesSnapshotData): NotesSnapshotData => {
+const prunePlaceholderNotes = (
+  snapshot: NotesSnapshotData,
+  options?: { treatEmptyAsPlaceholder?: boolean }
+): NotesSnapshotData => {
   const visibleNoteIds = new Set<string>();
   for (const note of snapshot.notes) {
     const source = snapshot.sourceById[note.id] ?? "";
-    if (!isPlaceholderSource(source)) {
+    if (!isPlaceholderSource(source, options)) {
       visibleNoteIds.add(note.id);
     }
   }
@@ -598,7 +604,8 @@ export const getNotesSnapshot = async (
   const snapshot = prunePlaceholderNotes(
     result.shape === "tree"
       ? buildTreeSnapshot(result.rows)
-      : buildLegacySnapshot(result.rows)
+      : buildLegacySnapshot(result.rows),
+    { treatEmptyAsPlaceholder: false }
   );
 
   if (snapshot.notes.length === 0 && snapshot.nodes.length === 0) {
