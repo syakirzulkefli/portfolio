@@ -13,6 +13,7 @@ export type SectionId =
   | "nextjs"
   | "docker"
   | "git"
+  | "mysql"
   | "tradingFundamentals"
   | "tradingTechnical"
   | "pastWinner"
@@ -78,6 +79,7 @@ export const sections: { id: SectionId | "all"; label: string }[] = [
   { id: "nextjs", label: "Next.js" },
   { id: "docker", label: "Docker" },
   { id: "git", label: "Git" },
+  { id: "mysql", label: "MySQL" },
   { id: "tradingFundamentals", label: "Trading Fundamentals" },
   { id: "tradingTechnical", label: "Technical Analysis" },
   { id: "pastWinner", label: "Past Winner" },
@@ -109,6 +111,7 @@ export const sectionIdsByDomain: Record<DomainId, SectionId[]> = {
     "nextjs",
     "docker",
     "git",
+    "mysql",
     "tooling",
     "algorithms",
     "other",

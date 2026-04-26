@@ -68,6 +68,7 @@ const SECTIONS = new Set<SectionId>([
   "nextjs",
   "docker",
   "git",
+  "mysql",
   "tradingFundamentals",
   "tradingTechnical",
   "pastWinner",

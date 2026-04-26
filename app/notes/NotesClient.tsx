@@ -294,10 +294,12 @@ const IconImage = ({
   src,
   alt,
   invert,
+  className = "h-10 w-10",
 }: {
   src: string;
   alt: string;
   invert?: boolean;
+  className?: string;
 }) => (
   <Image
     width={50}
@@ -306,7 +308,7 @@ const IconImage = ({
     alt={alt}
     unoptimized
     sizes="50px"
-    className="h-10 w-10"
+    className={className}
     style={invert ? { filter: "invert(1)" } : undefined}
   />
 );
@@ -340,12 +342,14 @@ const InvertingImgIcon = ({
   src,
   label,
   isDark,
+  className,
 }: {
   src: string;
   label: string;
   isDark: boolean;
+  className?: string;
 }) => (
-  <IconImage src={src} alt={label} invert={isDark} />
+  <IconImage src={src} alt={label} invert={isDark} className={className} />
 );
 
 const FundamentalIcon = () => (
@@ -1420,6 +1424,18 @@ export default function NotesClient({
       id: "git",
       label: "Git",
       icon: <Icons8MonoIcon iconId="38388" label="Git" isDark={isDark} />,
+    },
+    {
+      id: "mysql",
+      label: "MySQL",
+      icon: (
+        <InvertingImgIcon
+          src="https://img.icons8.com/ios/100/mysql-logo.png"
+          label="MySQL"
+          isDark={isDark}
+          className="h-15 w-15"
+        />
+      ),
     },
   ] satisfies ReadonlyArray<QuickIconItem>;
 
