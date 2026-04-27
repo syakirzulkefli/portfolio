@@ -41,13 +41,31 @@ const isLocalHostname = (hostname: string) =>
   hostname === "0.0.0.0" ||
   hostname === "::1";
 
+const hostnameFromHost = (host: string | null) => {
+  if (!host) return null;
+  try {
+    return new URL(`http://${host}`).hostname;
+  } catch {
+    return null;
+  }
+};
+
 const getRequestOrigin = (request: Request) => {
   const requestUrl = new URL(request.url);
+  if (isLocalHostname(requestUrl.hostname)) {
+    return requestUrl.origin;
+  }
+
+  const hostHeader = firstHeaderValue(request.headers.get("host"));
+  if (isLocalHostname(hostnameFromHost(hostHeader) ?? "")) {
+    return `${requestUrl.protocol}//${hostHeader}`;
+  }
+
   const forwardedProto = firstHeaderValue(
     request.headers.get("x-forwarded-proto")
   );
   const forwardedHost = firstHeaderValue(request.headers.get("x-forwarded-host"));
-  const host = forwardedHost || firstHeaderValue(request.headers.get("host"));
+  const host = forwardedHost || hostHeader;
 
   if (host) {
     const protocol = forwardedProto || requestUrl.protocol.replace(/:$/, "");

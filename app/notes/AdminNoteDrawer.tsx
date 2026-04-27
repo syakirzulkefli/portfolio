@@ -126,15 +126,18 @@ const buildEmptyForm = ({
   domain,
   section,
   parentId,
+  sortOrder = 0,
 }: {
   domain: DomainId;
   section: SectionId;
   parentId: string | null;
+  sortOrder?: number;
 }): FormState => ({
   ...emptyForm,
   domain,
   section: resolveSectionForDomain(domain, section),
   parent_id: parentId,
+  sort_order: sortOrder,
 });
 
 const collectDescendantIds = (nodes: NoteNode[], rootId: string) => {
@@ -195,6 +198,61 @@ const formToPayload = (form: FormState) => {
 
 const payloadKey = (payload: ReturnType<typeof formToPayload>) =>
   JSON.stringify(payload);
+
+const mysqlFolderTitleRanks = new Map([
+  ["introduction", 1],
+  ["retrieving data from a single table", 2],
+  ["retrieving data from multiple tables", 3],
+  ["inserting, updating, and deleting data", 4],
+]);
+
+const knownFolderTitleRank = (node: NoteNode) => {
+  if (node.kind !== "folder" || node.section !== "mysql") {
+    return Number.MAX_SAFE_INTEGER;
+  }
+
+  const normalized = node.title.toLowerCase().replace(/\s+/g, " ").trim();
+  return mysqlFolderTitleRanks.get(normalized) ?? Number.MAX_SAFE_INTEGER;
+};
+
+const effectiveSiblingSortRank = (node: NoteNode) => {
+  const explicitOrder = toSortRank(node.sortOrder);
+  if (explicitOrder !== Number.MAX_SAFE_INTEGER) return explicitOrder;
+  return knownFolderTitleRank(node);
+};
+
+const compareFolderNodesForTree = (a: NoteNode, b: NoteNode) => {
+  const aOrder = effectiveSiblingSortRank(a);
+  const bOrder = effectiveSiblingSortRank(b);
+  if (aOrder !== bOrder) return aOrder - bOrder;
+  return a.title.localeCompare(b.title);
+};
+
+const nextSiblingSortOrder = ({
+  nodes,
+  domain,
+  section,
+  parentId,
+}: {
+  nodes: NoteNode[];
+  domain: DomainId;
+  section: SectionId;
+  parentId: string | null;
+}) => {
+  const maxOrder = nodes
+    .filter(
+      (node) =>
+        node.domain === domain &&
+        node.section === section &&
+        (node.parentId ?? null) === parentId
+    )
+    .reduce((max, node) => {
+      const order = effectiveSiblingSortRank(node);
+      return order === Number.MAX_SAFE_INTEGER ? max : Math.max(max, order);
+    }, 0);
+
+  return maxOrder + 1;
+};
 
 const formatAdminSaveError = (error?: string, details?: string) => {
   const normalizedError = (error || "").trim();
@@ -321,6 +379,7 @@ export default function AdminNoteDrawer({
   const queuedSaveRef = useRef(false);
   const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const nodesRef = useRef(nodes);
 
   const title =
     persistedMode === "new"
@@ -346,29 +405,32 @@ export default function AdminNoteDrawer({
         (!descendants || !descendants.has(node.id))
     );
     const nodeById = new Map(scoped.map((node) => [node.id, node]));
-    const depthForNode = (nodeId: string) => {
-      let depth = 0;
-      let cursor = nodeById.get(nodeId) ?? null;
-      let safety = 0;
-      while (cursor?.parentId && safety < 50) {
-        depth += 1;
-        cursor = nodeById.get(cursor.parentId) ?? null;
-        safety += 1;
-      }
-      return depth;
-    };
+    const childrenByParentId = new Map<string | null, NoteNode[]>();
 
-    return scoped
-      .sort((a, b) => {
-        const aOrder = toSortRank(a.sortOrder);
-        const bOrder = toSortRank(b.sortOrder);
-        if (aOrder !== bOrder) return aOrder - bOrder;
-        return a.title.localeCompare(b.title);
-      })
-      .map((node) => ({
-        value: node.id,
-        label: `${"  ".repeat(depthForNode(node.id))}${node.title}`,
-      }));
+    for (const node of scoped) {
+      const parentId =
+        node.parentId && nodeById.has(node.parentId) ? node.parentId : null;
+      const children = childrenByParentId.get(parentId) ?? [];
+      children.push(node);
+      childrenByParentId.set(parentId, children);
+    }
+
+    for (const siblings of childrenByParentId.values()) {
+      siblings.sort(compareFolderNodesForTree);
+    }
+
+    const options: Array<{ value: string; label: string }> = [];
+    const append = (parentId: string | null, depth: number) => {
+      for (const node of childrenByParentId.get(parentId) ?? []) {
+        options.push({
+          value: node.id,
+          label: `${"  ".repeat(depth)}${node.title}`,
+        });
+        append(node.id, depth + 1);
+      }
+    };
+    append(null, 0);
+    return options;
   }, [form.domain, form.section, nodes, persistedMode, persistedNoteId]);
   const canEditContent = form.kind === "note";
   const autosaveLabel =
@@ -395,12 +457,58 @@ export default function AdminNoteDrawer({
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
+  const orderForNewItem = (
+    domain: DomainId,
+    section: SectionId,
+    parentId: string | null
+  ) =>
+    nextSiblingSortOrder({
+      nodes: nodesRef.current,
+      domain,
+      section,
+      parentId,
+    });
+
+  const withNewItemOrder = (next: FormState): FormState =>
+    persistedModeRef.current === "new"
+      ? {
+          ...next,
+          sort_order: orderForNewItem(next.domain, next.section, next.parent_id),
+        }
+      : next;
+
+  const setKindField = (kind: NoteKind) => {
+    setForm((prev) => {
+      const parentId =
+        persistedModeRef.current === "new" && kind === "folder"
+          ? null
+          : prev.parent_id;
+      return withNewItemOrder({ ...prev, kind, parent_id: parentId });
+    });
+  };
+
+  const setSectionField = (section: SectionId) => {
+    setForm((prev) =>
+      withNewItemOrder({
+        ...prev,
+        section,
+        parent_id: null,
+      })
+    );
+  };
+
+  const setParentField = (parentId: string | null) => {
+    setForm((prev) => withNewItemOrder({ ...prev, parent_id: parentId }));
+  };
+
   const setDomainField = (domain: DomainId) => {
     setForm((prev) => ({
-      ...prev,
-      domain,
-      section: resolveSectionForDomain(domain, prev.section),
-      parent_id: null,
+      ...withNewItemOrder({
+        ...prev,
+        domain,
+        section: resolveSectionForDomain(domain, prev.section),
+        parent_id: null,
+      }),
     }));
   };
 
@@ -431,13 +539,20 @@ export default function AdminNoteDrawer({
   }, [persistedNoteId]);
 
   useEffect(() => {
+    nodesRef.current = nodes;
+  }, [nodes]);
+
+  useEffect(() => {
     if (!isSectionInDomain(form.domain, form.section)) {
-      setForm((prev) => ({
-        ...prev,
-        section: resolveSectionForDomain(prev.domain, prev.section),
-        parent_id: null,
-      }));
+      setForm((prev) =>
+        withNewItemOrder({
+          ...prev,
+          section: resolveSectionForDomain(prev.domain, prev.section),
+          parent_id: null,
+        })
+      );
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.domain, form.section]);
 
   useEffect(() => {
@@ -451,7 +566,8 @@ export default function AdminNoteDrawer({
     ) {
       return;
     }
-    setForm((prev) => ({ ...prev, parent_id: null }));
+    setForm((prev) => withNewItemOrder({ ...prev, parent_id: null }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.domain, form.parent_id, form.section, nodes]);
 
   useEffect(() => {
@@ -490,6 +606,12 @@ export default function AdminNoteDrawer({
         domain: defaultDomain,
         section: defaultSection,
         parentId: defaultParentId,
+        sortOrder: nextSiblingSortOrder({
+          nodes: nodesRef.current,
+          domain: defaultDomain,
+          section: defaultSection,
+          parentId: defaultParentId,
+        }),
       });
       setLoading(false);
       setForm(nextForm);
@@ -1059,16 +1181,39 @@ export default function AdminNoteDrawer({
           ) : (
             <div className="space-y-6">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div className="space-y-1 sm:col-span-2">
+                <div className="space-y-1">
                   <label className={`text-xs font-semibold uppercase tracking-[0.12em] ${muted}`}>
-                    Title
+                    Item Type
                   </label>
-                  <input
-                    value={form.title}
-                    onChange={(e) => setField("title", e.target.value)}
+                  <select
+                    value={form.kind}
+                    onChange={(e) => setKindField(e.target.value as NoteKind)}
+                    disabled={persistedMode === "edit"}
                     className={`w-full rounded-xl border px-3 py-2 text-sm outline-none ${input}`}
-                    placeholder="Java: Introduction"
-                  />
+                  >
+                    <option value="note">Note</option>
+                    <option value="folder">Folder</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className={`text-xs font-semibold uppercase tracking-[0.12em] ${muted}`}>
+                    Parent Folder
+                  </label>
+                  <select
+                    value={form.parent_id ?? ""}
+                    onChange={(e) =>
+                      setParentField(e.target.value ? e.target.value : null)
+                    }
+                    className={`w-full rounded-xl border px-3 py-2 text-sm outline-none ${input}`}
+                  >
+                    <option value="">Top level of this topic</option>
+                    {parentOptions.map((item) => (
+                      <option key={item.value} value={item.value}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="space-y-1">
@@ -1092,7 +1237,7 @@ export default function AdminNoteDrawer({
                   </label>
                   <select
                     value={form.section}
-                    onChange={(e) => setField("section", e.target.value as SectionId)}
+                    onChange={(e) => setSectionField(e.target.value as SectionId)}
                     className={`w-full rounded-xl border px-3 py-2 text-sm outline-none ${input}`}
                   >
                     {sectionOptions.map((item) => (
@@ -1105,37 +1250,60 @@ export default function AdminNoteDrawer({
 
                 <div className="space-y-1">
                   <label className={`text-xs font-semibold uppercase tracking-[0.12em] ${muted}`}>
-                    Item Type
+                    Order
                   </label>
-                  <select
-                    value={form.kind}
-                    onChange={(e) => setField("kind", e.target.value as NoteKind)}
-                    disabled={persistedMode === "edit"}
-                    className={`w-full rounded-xl border px-3 py-2 text-sm outline-none ${input}`}
-                  >
-                    <option value="note">Note</option>
-                    <option value="folder">Folder</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <label className={`text-xs font-semibold uppercase tracking-[0.12em] ${muted}`}>
-                    Parent Folder
-                  </label>
-                  <select
-                    value={form.parent_id ?? ""}
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={form.sort_order}
                     onChange={(e) =>
-                      setField("parent_id", e.target.value ? e.target.value : null)
+                      setField(
+                        "sort_order",
+                        Number.isFinite(e.target.valueAsNumber)
+                          ? Math.max(0, Math.trunc(e.target.valueAsNumber))
+                          : 0
+                      )
                     }
                     className={`w-full rounded-xl border px-3 py-2 text-sm outline-none ${input}`}
-                  >
-                    <option value="">Top level of this topic</option>
-                    {parentOptions.map((item) => (
-                      <option key={item.value} value={item.value}>
-                        {item.label}
-                      </option>
-                    ))}
-                  </select>
+                  />
+                  <p className={`text-xs ${muted}`}>Lower numbers appear first.</p>
+                </div>
+
+                {form.kind === "note" ? (
+                  <div className="space-y-1">
+                    <label className={`text-xs font-semibold uppercase tracking-[0.12em] ${muted}`}>
+                      Pin
+                    </label>
+                    <label
+                      className={[
+                        "flex min-h-[39px] items-center gap-3 rounded-xl border px-3 py-2 text-sm",
+                        isDark
+                          ? "border-slate-800 bg-slate-900 text-slate-100"
+                          : "border-slate-300 bg-white text-slate-900",
+                      ].join(" ")}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={form.pinned}
+                        onChange={(e) => setField("pinned", e.target.checked)}
+                        className="h-4 w-4 rounded border-slate-500 accent-sky-500"
+                      />
+                      <span>Pin note</span>
+                    </label>
+                  </div>
+                ) : null}
+
+                <div className="space-y-1 sm:col-span-2">
+                  <label className={`text-xs font-semibold uppercase tracking-[0.12em] ${muted}`}>
+                    Title
+                  </label>
+                  <input
+                    value={form.title}
+                    onChange={(e) => setField("title", e.target.value)}
+                    className={`w-full rounded-xl border px-3 py-2 text-sm outline-none ${input}`}
+                    placeholder="Java: Introduction"
+                  />
                 </div>
 
                 <div className="space-y-1 sm:col-span-2">
@@ -1168,20 +1336,23 @@ export default function AdminNoteDrawer({
                 </div>
 
                 {showAdvanced ? (
-                  <div className="space-y-1 sm:col-span-2">
-                    <label className={`text-xs font-semibold uppercase tracking-[0.12em] ${muted}`}>
-                      Slug (URL)
-                    </label>
-                    <input
-                      value={form.id}
-                      onChange={(e) => setField("id", e.target.value)}
-                      disabled={persistedMode === "edit"}
-                      className={`w-full rounded-xl border px-3 py-2 text-sm outline-none ${input}`}
-                      placeholder="leave blank to auto-generate"
-                    />
-                    <p className={`text-xs ${muted}`}>
-                      Used in the URL as `?note=...`. Leave blank to generate from the title (conflicts auto-resolve with `-2`, `-3`, ...).
-                    </p>
+                  <div className="grid grid-cols-1 gap-3 sm:col-span-2 sm:grid-cols-2">
+                    <div className="space-y-1 sm:col-span-2">
+                      <label className={`text-xs font-semibold uppercase tracking-[0.12em] ${muted}`}>
+                        Slug (URL)
+                      </label>
+                      <input
+                        value={form.id}
+                        onChange={(e) => setField("id", e.target.value)}
+                        disabled={persistedMode === "edit"}
+                        className={`w-full rounded-xl border px-3 py-2 text-sm outline-none ${input}`}
+                        placeholder="leave blank to auto-generate"
+                      />
+                      <p className={`text-xs ${muted}`}>
+                        Used in the URL as `?note=...`. Leave blank to generate from the title (conflicts auto-resolve with `-2`, `-3`, ...).
+                      </p>
+                    </div>
+
                   </div>
                 ) : null}
               </div>

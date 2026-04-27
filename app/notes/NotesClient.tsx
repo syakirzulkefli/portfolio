@@ -105,13 +105,40 @@ const toSortRank = (value: number | undefined) => {
   return normalized > 0 ? normalized : Number.MAX_SAFE_INTEGER;
 };
 
+const mysqlFolderTitleRanks = new Map([
+  ["introduction", 1],
+  ["retrieving data from a single table", 2],
+  ["retrieving data from multiple tables", 3],
+  ["inserting, updating, and deleting data", 4],
+]);
+
+const knownFolderTitleRank = (node: NoteNode) => {
+  if (node.kind !== "folder" || node.section !== "mysql") {
+    return Number.MAX_SAFE_INTEGER;
+  }
+
+  const normalized = node.title.toLowerCase().replace(/\s+/g, " ").trim();
+  return mysqlFolderTitleRanks.get(normalized) ?? Number.MAX_SAFE_INTEGER;
+};
+
+const effectiveTreeSortRank = (node: NoteNode) => {
+  const explicitOrder = toSortRank(node.sortOrder);
+  if (explicitOrder !== Number.MAX_SAFE_INTEGER) return explicitOrder;
+  return knownFolderTitleRank(node);
+};
+
 type TreeNode = NoteNode & { children: TreeNode[] };
 
 const compareTreeNodes = (a: NoteNode, b: NoteNode) => {
-  const aOrder = toSortRank(a.sortOrder);
-  const bOrder = toSortRank(b.sortOrder);
-  if (aOrder !== bOrder) return aOrder - bOrder;
   if (a.kind !== b.kind) return a.kind === "folder" ? -1 : 1;
+  if (a.kind === "note" && b.kind === "note" && a.pinned !== b.pinned) {
+    return a.pinned ? -1 : 1;
+  }
+
+  const aOrder = effectiveTreeSortRank(a);
+  const bOrder = effectiveTreeSortRank(b);
+  if (aOrder !== bOrder) return aOrder - bOrder;
+
   return a.title.localeCompare(b.title);
 };
 
@@ -166,6 +193,8 @@ const buildTreeForSection = (
 };
 
 const compareNotesForList = (a: Note, b: Note) => {
+  if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+
   const domainDiff = domainRank[a.domain] - domainRank[b.domain];
   if (domainDiff !== 0) return domainDiff;
 
@@ -829,6 +858,7 @@ export default function NotesClient({
         return contentMatchIds?.has(note.id) ?? false;
       })
       .sort((a, b) => {
+        if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
         if (sortBy === "recent") {
           return (
             new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
@@ -1601,10 +1631,6 @@ export default function NotesClient({
     : null;
   const selectedFolderNode =
     selectedTreeNode?.kind === "folder" ? selectedTreeNode : null;
-  const createParentId =
-    selectedTreeNode?.kind === "folder"
-      ? selectedTreeNode.id
-      : selectedTreeNode?.parentId ?? null;
 
   const renderTreeNodes = (
     items: TreeNode[],
@@ -2454,7 +2480,7 @@ export default function NotesClient({
           nodes={nodes}
           defaultDomain={activeDomain}
           defaultSection={activeSection}
-          defaultParentId={createParentId}
+          defaultParentId={null}
           isDark={isDark}
           mdxVars={mdxVars}
           onClose={() => {

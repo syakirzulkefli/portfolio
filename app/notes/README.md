@@ -15,9 +15,16 @@
 3. Optional env:
    - `NOTES_STORAGE_BUCKET` (default: `notes-media`)
    - `NOTES_OWNER_EMAIL` or `NOTES_OWNER_EMAILS` (comma-separated). If unset, the app falls back to `msyakirzulkefli@gmail.com`.
-4. In Supabase Auth URL configuration, allow the production callback:
+4. In Supabase Auth URL configuration, allow both local and production callbacks:
    - Site URL: `https://syakir.dev`
-   - Redirect URL: `https://syakir.dev/auth/callback`
+   - Redirect URLs:
+     - `http://localhost:33333/**`
+     - `http://localhost:3000/**`
+     - `https://syakir.dev/auth/callback`
+
+For local development, do not set `SITE_URL`/`NEXT_PUBLIC_SITE_URL` to
+`https://syakir.dev`. The sign-in route derives the local callback from the
+current request URL, for example `http://localhost:33333/auth/callback`.
 
 ### Ongoing workflow
 
