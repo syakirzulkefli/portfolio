@@ -1108,10 +1108,12 @@ export default function AdminNoteDrawer({
         ].join(" ")}
       >
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/60 px-4 py-3 sm:px-5 sm:py-4">
-          <div className="min-w-0">
-            <h2 className="text-lg font-semibold">{title}</h2>
+          <div className="flex min-w-0 items-baseline gap-3">
+            <h2 className="shrink-0 text-lg font-semibold">{title}</h2>
             {autosaveLabel ? (
-              <p className={`mt-1 text-xs ${muted}`}>Autosave: {autosaveLabel}</p>
+              <span className={`min-w-0 truncate text-xs ${muted}`}>
+                Autosave: {autosaveLabel}
+              </span>
             ) : null}
           </div>
           <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
@@ -1501,7 +1503,7 @@ export default function AdminNoteDrawer({
                 </div>
                 {canEditContent ? (
                   <p className={`text-xs ${muted}`}>
-                    Select text and use <code>Highlight</code> to color it. Put the cursor inside highlighted text to recolor it, use <code>Unhighlight</code> to remove it, and paste or upload images directly into the note.
+                    Select text and use <code>Highlight</code> to color it. Type <code>```java</code> then Space/Enter for code snippets, and paste or upload images directly into the note.
                   </p>
                 ) : null}
 

@@ -300,7 +300,7 @@ export const markdownComponents = {
   h1: ({ className, ...props }: ComponentProps<"h1">) => (
     <h2
       className={cx(
-        "mt-6 text-2xl font-semibold text-[var(--note-heading-text)]",
+        "mt-4 text-2xl font-semibold leading-[1.2] text-[var(--note-heading-text)]",
         className
       )}
       {...props}
@@ -309,29 +309,29 @@ export const markdownComponents = {
   h2: ({ className, ...props }: ComponentProps<"h2">) => (
     <h3
       className={cx(
-        "mt-6 text-lg font-semibold text-[var(--note-heading-text)]",
+        "mt-4 text-lg font-semibold leading-[1.2] text-[var(--note-heading-text)]",
         className
       )}
       {...props}
     />
   ),
   p: ({ className, ...props }: ComponentProps<"p">) => (
-    <p className={cx("whitespace-normal", className)} {...props} />
+    <p className={cx("whitespace-normal leading-[1.25]", className)} {...props} />
   ),
   ul: ({ className, ...props }: ComponentProps<"ul">) => (
     <ul
-      className={cx("list-disc list-outside space-y-2 pl-6", className)}
+      className={cx("list-disc list-outside space-y-1 pl-6", className)}
       {...props}
     />
   ),
   ol: ({ className, ...props }: ComponentProps<"ol">) => (
     <ol
-      className={cx("list-decimal list-outside space-y-2 pl-6", className)}
+      className={cx("list-decimal list-outside space-y-1 pl-6", className)}
       {...props}
     />
   ),
   li: ({ className, ...props }: ComponentProps<"li">) => (
-    <li className={cx("whitespace-normal", className)} {...props} />
+    <li className={cx("whitespace-normal leading-[1.25]", className)} {...props} />
   ),
   blockquote: ({ className, ...props }: ComponentProps<"blockquote">) => (
     <blockquote
@@ -391,5 +391,5 @@ export const renderMarkdownToJsx = async (
     components: markdownComponents,
   });
 
-  return <div className="space-y-4">{content}</div>;
+  return <div className="space-y-2">{content}</div>;
 };
