@@ -1094,7 +1094,7 @@ export default function AdminNoteDrawer({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex">
+    <div className="fixed inset-0 z-50 flex items-stretch justify-center p-0 sm:items-center sm:p-6">
       <button
         type="button"
         aria-label="Close editor"
@@ -1103,7 +1103,7 @@ export default function AdminNoteDrawer({
       />
       <div
         className={[
-          "relative ml-auto flex h-full w-full max-w-full flex-col border-t shadow-2xl sm:max-w-[720px] sm:border-l sm:border-t-0",
+          "relative flex h-full w-full max-w-full flex-col overflow-hidden border shadow-2xl sm:h-[92vh] sm:max-w-[1040px] sm:rounded-2xl",
           surface,
         ].join(" ")}
       >
@@ -1164,7 +1164,7 @@ export default function AdminNoteDrawer({
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5">
+        <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6">
           {error ? (
             <p className="mb-4 rounded-xl border border-red-400/40 bg-red-500/10 px-3 py-2 text-sm text-red-100">
               {error}
@@ -1181,7 +1181,7 @@ export default function AdminNoteDrawer({
               Loading...
             </p>
           ) : (
-            <div className="space-y-6">
+            <div className="mx-auto w-full max-w-[920px] space-y-6">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="space-y-1">
                   <label className={`text-xs font-semibold uppercase tracking-[0.12em] ${muted}`}>
@@ -1598,7 +1598,7 @@ export default function AdminNoteDrawer({
                 ) : (
                   <div
                     className={[
-                      "rounded-2xl border p-4",
+                      "rounded-2xl border p-4 sm:p-7",
                       isDark ? "border-slate-800 bg-slate-950/60" : "border-slate-200 bg-slate-50",
                     ].join(" ")}
                     style={mdxVars}

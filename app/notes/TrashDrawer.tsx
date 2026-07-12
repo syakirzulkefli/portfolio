@@ -43,6 +43,8 @@ export default function TrashDrawer({
   const [query, setQuery] = useState("");
   const [notes, setNotes] = useState<TrashNote[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const surface = isDark
     ? "border-slate-800/70 bg-slate-950/95 text-slate-100"
@@ -55,6 +57,10 @@ export default function TrashDrawer({
     "inline-flex items-center justify-center rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.15em] transition duration-150 ease-out gap-2";
   const focus =
     "focus:outline-none focus:ring-2 focus:ring-sky-400/60 focus:ring-offset-0";
+  const destructiveButton = isDark
+    ? "border-red-500/40 bg-red-500/10 text-red-100 hover:bg-red-500/20"
+    : "border-red-500/40 bg-red-50 text-red-700 hover:bg-red-100";
+  const disabled = loading || !!busyId || bulkDeleting;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -73,12 +79,14 @@ export default function TrashDrawer({
       if (!response.ok || !payload.ok || !Array.isArray(payload.notes)) {
         setError(payload.error || "Failed to load trash.");
         setNotes([]);
+        setSelectedIds(new Set());
         return;
       }
       setNotes(payload.notes);
     } catch {
       setError("Failed to load trash.");
       setNotes([]);
+      setSelectedIds(new Set());
     } finally {
       setLoading(false);
     }
@@ -101,8 +109,45 @@ export default function TrashDrawer({
     });
   }, [notes, query]);
 
+  const filteredIds = useMemo(() => filtered.map((note) => note.id), [filtered]);
+  const selectedCount = selectedIds.size;
+  const allFilteredSelected =
+    filteredIds.length > 0 && filteredIds.every((id) => selectedIds.has(id));
+
+  useEffect(() => {
+    setSelectedIds((prev) => {
+      const availableIds = new Set(notes.map((note) => note.id));
+      const next = new Set([...prev].filter((id) => availableIds.has(id)));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [notes]);
+
+  const toggleSelected = (noteId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(noteId)) {
+        next.delete(noteId);
+      } else {
+        next.add(noteId);
+      }
+      return next;
+    });
+  };
+
+  const toggleFilteredSelection = () => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allFilteredSelected) {
+        filteredIds.forEach((id) => next.delete(id));
+      } else {
+        filteredIds.forEach((id) => next.add(id));
+      }
+      return next;
+    });
+  };
+
   const handleRestore = async (noteId: string) => {
-    if (busyId) return;
+    if (disabled) return;
     setBusyId(noteId);
     setError(null);
     setMessage(null);
@@ -131,7 +176,7 @@ export default function TrashDrawer({
   };
 
   const handleHardDelete = async (noteId: string) => {
-    if (busyId) return;
+    if (disabled) return;
     const note = notes.find((n) => n.id === noteId);
     const label = note?.title || noteId;
     if (!window.confirm(`Delete "${label}" forever? This cannot be undone.`)) return;
@@ -150,12 +195,68 @@ export default function TrashDrawer({
         return;
       }
       setNotes((prev) => prev.filter((n) => n.id !== noteId));
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(noteId);
+        return next;
+      });
       onHardDeleted(noteId);
       setMessage("Deleted forever.");
     } catch {
       setError("Delete failed.");
     } finally {
       setBusyId(null);
+    }
+  };
+
+  const handleBulkHardDelete = async (mode: "selected" | "all") => {
+    if (disabled) return;
+
+    const ids = mode === "selected" ? [...selectedIds] : notes.map((note) => note.id);
+    if (ids.length === 0) return;
+
+    const label =
+      mode === "all"
+        ? `all ${ids.length} notes in Trash`
+        : `${ids.length} selected note${ids.length === 1 ? "" : "s"}`;
+    if (!window.confirm(`Delete ${label} forever? This cannot be undone.`)) return;
+
+    setBulkDeleting(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const response = await fetch("/api/notes/admin/notes/bulk-delete", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(mode === "all" ? { all: true } : { ids }),
+      });
+      const payload = (await response.json()) as {
+        ok?: boolean;
+        deletedIds?: string[];
+        error?: string;
+      };
+      if (!response.ok || !payload.ok || !Array.isArray(payload.deletedIds)) {
+        setError(payload.error || "Delete failed.");
+        return;
+      }
+
+      const deletedIds = new Set(payload.deletedIds);
+      setNotes((prev) => prev.filter((note) => !deletedIds.has(note.id)));
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        deletedIds.forEach((id) => next.delete(id));
+        return next;
+      });
+      payload.deletedIds.forEach(onHardDeleted);
+      setMessage(
+        `Deleted ${payload.deletedIds.length} note${
+          payload.deletedIds.length === 1 ? "" : "s"
+        } forever.`
+      );
+    } catch {
+      setError("Delete failed.");
+    } finally {
+      setBulkDeleting(false);
     }
   };
 
@@ -186,7 +287,7 @@ export default function TrashDrawer({
             <button
               type="button"
               onClick={load}
-              disabled={loading || !!busyId}
+              disabled={disabled}
               className={[
                 pill,
                 focus,
@@ -200,7 +301,7 @@ export default function TrashDrawer({
             <button
               type="button"
               onClick={onClose}
-              disabled={loading || !!busyId}
+              disabled={disabled}
               className={[
                 pill,
                 focus,
@@ -238,6 +339,50 @@ export default function TrashDrawer({
             />
           </div>
 
+          {notes.length > 0 ? (
+            <div
+              className={[
+                "mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border px-3 py-3",
+                isDark
+                  ? "border-slate-800 bg-slate-950/60"
+                  : "border-slate-200 bg-slate-50",
+              ].join(" ")}
+            >
+              <label className="flex min-w-0 items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={allFilteredSelected}
+                  onChange={toggleFilteredSelection}
+                  disabled={disabled || filteredIds.length === 0}
+                  className="h-4 w-4 rounded border-slate-500 accent-sky-500"
+                />
+                <span className={muted}>
+                  {selectedCount > 0
+                    ? `${selectedCount} selected`
+                    : `Select visible${filteredIds.length ? ` (${filteredIds.length})` : ""}`}
+                </span>
+              </label>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => void handleBulkHardDelete("selected")}
+                  disabled={disabled || selectedCount === 0}
+                  className={[pill, focus, destructiveButton].join(" ")}
+                >
+                  {bulkDeleting && selectedCount > 0 ? "Deleting..." : "Delete selected"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleBulkHardDelete("all")}
+                  disabled={disabled || notes.length === 0}
+                  className={[pill, focus, destructiveButton].join(" ")}
+                >
+                  {bulkDeleting ? "Deleting..." : "Delete all"}
+                </button>
+              </div>
+            </div>
+          ) : null}
+
           {loading ? (
             <p className={`rounded-xl border px-3 py-2 text-sm ${muted} ${surface}`}>
               Loading...
@@ -259,15 +404,25 @@ export default function TrashDrawer({
                   ].join(" ")}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className={`text-xs uppercase tracking-[0.14em] ${muted}`}>
-                        {note.domain} • {sectionLabelForId(note.section)} • {note.kind}
-                      </div>
-                      <div className="mt-1 truncate text-sm font-semibold">
-                        {note.title || note.id}
-                      </div>
-                      <div className={`mt-1 text-xs ${muted}`}>
-                        {note.deleted_at ? `Deleted ${new Date(note.deleted_at).toLocaleString()}` : ""}
+                    <div className="flex min-w-0 flex-1 items-start gap-3">
+                      <input
+                        type="checkbox"
+                        aria-label={`Select ${note.title || note.id}`}
+                        checked={selectedIds.has(note.id)}
+                        onChange={() => toggleSelected(note.id)}
+                        disabled={disabled}
+                        className="mt-1 h-4 w-4 rounded border-slate-500 accent-sky-500"
+                      />
+                      <div className="min-w-0">
+                        <div className={`text-xs uppercase tracking-[0.14em] ${muted}`}>
+                          {note.domain} • {sectionLabelForId(note.section)} • {note.kind}
+                        </div>
+                        <div className="mt-1 truncate text-sm font-semibold">
+                          {note.title || note.id}
+                        </div>
+                        <div className={`mt-1 text-xs ${muted}`}>
+                          {note.deleted_at ? `Deleted ${new Date(note.deleted_at).toLocaleString()}` : ""}
+                        </div>
                       </div>
                     </div>
 
@@ -275,7 +430,7 @@ export default function TrashDrawer({
                       <button
                         type="button"
                         onClick={() => handleRestore(note.id)}
-                        disabled={!!busyId}
+                        disabled={disabled}
                         className={[
                           pill,
                           focus,
@@ -289,13 +444,11 @@ export default function TrashDrawer({
                       <button
                         type="button"
                         onClick={() => handleHardDelete(note.id)}
-                        disabled={!!busyId}
+                        disabled={disabled}
                         className={[
                           pill,
                           focus,
-                          isDark
-                            ? "border-red-500/40 bg-red-500/10 text-red-100 hover:bg-red-500/20"
-                            : "border-red-500/40 bg-red-50 text-red-700 hover:bg-red-100",
+                          destructiveButton,
                         ].join(" ")}
                       >
                         {busyId === note.id ? "Working..." : "Delete forever"}

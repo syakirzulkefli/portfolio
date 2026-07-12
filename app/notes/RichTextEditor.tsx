@@ -30,7 +30,7 @@ export type RichTextEditorHandle = {
 
 const editorHtmlClassName = (isDark: boolean) =>
   [
-    "min-h-[320px] rounded-2xl border px-3 py-3 text-[15px] leading-[1.25] outline-none sm:min-h-[420px] sm:px-4",
+    "min-h-[320px] rounded-2xl border p-4 text-[15px] leading-[1.25] outline-none sm:min-h-[420px] sm:p-7",
     "max-w-none",
     "[&_h1]:mt-4 [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:leading-[1.2]",
     "[&_h2]:mt-4 [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:leading-[1.2]",
